@@ -57,7 +57,7 @@ async function renderHome() {
     `;
     hero
       .querySelector("#create-first-template")
-      .addEventListener("click", () => alert("Editor schede in arrivo"));
+      .addEventListener("click", () => openEditor(null));
     document.getElementById("template-list").innerHTML = "";
     return;
   }

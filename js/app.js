@@ -11,6 +11,7 @@ function showScreen(id) {
 
 async function boot() {
   screens.home = document.getElementById("screen-home");
+  screens.editor = document.getElementById("screen-editor");
   screens.profile = document.getElementById("screen-profile");
 
   showScreen("home");

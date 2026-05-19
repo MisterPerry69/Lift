@@ -1,0 +1,185 @@
+/* ============================================
+   LIFT — Editor schede
+   ============================================ */
+
+.editor-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.editor-title-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border);
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  padding: var(--sp-2) 0;
+  outline: none;
+}
+
+.editor-title-input:focus {
+  border-color: var(--accent);
+}
+
+.block-card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+
+.block-card .bc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.bc-exname {
+  font-weight: 700;
+  font-size: var(--fs-body);
+}
+
+.bc-muscle {
+  font-size: var(--fs-small);
+  color: var(--text-dim-2);
+  text-transform: capitalize;
+}
+
+.bc-del {
+  color: var(--danger);
+  background: var(--danger-ghost);
+  border-radius: var(--radius-pill);
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.sets-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.set-config {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-small);
+}
+
+.set-config input {
+  width: 38px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: center;
+  font-size: var(--fs-small);
+  outline: none;
+}
+
+.mini-select {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-pill);
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-micro);
+}
+
+.add-block-btn,
+.save-template-btn {
+  width: 100%;
+  padding: var(--sp-4);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.add-block-btn {
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  color: var(--text-dim);
+}
+
+.save-template-btn {
+  background: var(--accent);
+  color: #07120c;
+  margin-top: var(--sp-5);
+}
+
+/* Picker esercizi */
+.ex-picker {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 50;
+  display: none;
+  flex-direction: column;
+  padding: var(--sp-4);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.ex-picker.open {
+  display: flex;
+}
+
+.ex-search {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-body);
+  outline: none;
+  margin-bottom: var(--sp-3);
+}
+
+.ex-results {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.ex-item {
+  padding: var(--sp-3) var(--sp-2);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.ex-item .ei-name {
+  font-weight: 600;
+}
+
+.ex-item .ei-meta {
+  font-size: var(--fs-small);
+  color: var(--text-dim-2);
+  text-transform: capitalize;
+}
