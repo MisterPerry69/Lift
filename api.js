@@ -4,8 +4,8 @@
    In dev (USE_MOCK=true) ritorna i dati mock.
    ============================================ */
 
-const USE_MOCK = true; // TODO: false quando il backend GAS e pronto
-const GAS_URL = ""; // TODO: URL web app Apps Script
+const USE_MOCK = false; // TODO: false quando il backend GAS e pronto
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyoF8xar7vf7K99rPm9VCpCSZ_3_84_l8vaa9mLdorXWIEubOpC_woBE_l2JBZJ7jGifw/exec"; // TODO: URL web app Apps Script
 
 async function apiGet(action, params = {}) {
   if (USE_MOCK) return mockResponse(action, params);
