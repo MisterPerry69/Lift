@@ -44,6 +44,24 @@ async function renderHome() {
   // Hero = scheda suggerita (fatta meno di recente)
   const suggested = pickSuggestedTemplate(templates);
   const hero = document.getElementById("hero-card");
+
+  // Empty state: nessuna scheda ancora
+  if (!suggested) {
+    hero.innerHTML = `
+      <div class="hero-kicker">Nessuna scheda</div>
+      <div class="hero-name">Inizia da qui</div>
+      <div class="hero-meta">Crea la tua prima scheda per allenarti</div>
+      <button class="hero-start" id="create-first-template">
+        ${iconSvg("play")} Crea scheda
+      </button>
+    `;
+    hero
+      .querySelector("#create-first-template")
+      .addEventListener("click", () => alert("Editor schede in arrivo"));
+    document.getElementById("template-list").innerHTML = "";
+    return;
+  }
+
   hero.innerHTML = `
     <div class="hero-kicker">Oggi tocca</div>
     <div class="hero-name">${suggested.name}</div>
