@@ -5,13 +5,30 @@
    ============================================ */
 
 const USE_MOCK = false; // TODO: false quando il backend GAS e pronto
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyoF8xar7vf7K99rPm9VCpCSZ_3_84_l8vaa9mLdorXWIEubOpC_woBE_l2JBZJ7jGifw/exec"; // TODO: URL web app Apps Script
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwjlns1fPiARx6jVA_5INxyfdfDeMNR3fUIdsiA_8MblMdY3DEXBi7PlA4flHqs1pQuIg/exec"; // TODO: URL web app Apps Script
+
+// GAS risponde con un redirect a googleusercontent: il Content-Type finale
+// non e sempre application/json, quindi parsiamo come testo e poi JSON.parse.
+async function _parse(res) {
+  const txt = await res.text();
+  if (txt.trim().startsWith("<")) {
+    // HTML invece di JSON = quasi sempre login Google (deploy non "Chiunque")
+    throw new Error(
+      "Il backend ha risposto con HTML invece di JSON. Verifica che il deploy GAS sia 'Chiunque' con una NUOVA versione."
+    );
+  }
+  try {
+    return JSON.parse(txt);
+  } catch (e) {
+    throw new Error("Risposta non JSON: " + txt.slice(0, 120));
+  }
+}
 
 async function apiGet(action, params = {}) {
   if (USE_MOCK) return mockResponse(action, params);
   const qs = new URLSearchParams({ action, ...params }).toString();
   const res = await fetch(`${GAS_URL}?${qs}`);
-  return res.json();
+  return _parse(res);
 }
 
 async function apiPost(action, payload = {}) {
@@ -22,7 +39,7 @@ async function apiPost(action, payload = {}) {
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action, ...payload }),
   });
-  return res.json();
+  return _parse(res);
 }
 
 function mockResponse(action) {
