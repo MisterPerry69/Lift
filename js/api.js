@@ -5,7 +5,7 @@
    ============================================ */
 
 const USE_MOCK = false; // TODO: false quando il backend GAS e pronto
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwjlns1fPiARx6jVA_5INxyfdfDeMNR3fUIdsiA_8MblMdY3DEXBi7PlA4flHqs1pQuIg/exec"; // TODO: URL web app Apps Script
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwjlns1fPiARx6jVA_5INxyfdfDeMNR3fUIdsiA_8MblMdY3DEXBi7PlA4flHqs1pQuIg/exec";
 
 // GAS risponde con un redirect a googleusercontent: il Content-Type finale
 // non e sempre application/json, quindi parsiamo come testo e poi JSON.parse.
