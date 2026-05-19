@@ -12,7 +12,13 @@ function showScreen(id) {
 async function boot() {
   screens.home = document.getElementById("screen-home");
   screens.editor = document.getElementById("screen-editor");
+  screens.exec = document.getElementById("screen-exec");
   screens.profile = document.getElementById("screen-profile");
+
+  // se c'e una sessione attiva non terminata, riprendila
+  if (typeof resumeSessionIfAny === "function" && resumeSessionIfAny()) {
+    return;
+  }
 
   showScreen("home");
 
