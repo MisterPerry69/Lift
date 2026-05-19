@@ -1,0 +1,160 @@
+/* ============================================
+   LIFT — Home
+   ============================================ */
+
+.home-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.home-greeting {
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.home-streak {
+  margin-top: var(--sp-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+}
+
+.home-streak strong {
+  color: var(--accent);
+}
+
+.avatar-btn {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  transition: transform var(--t-fast);
+}
+
+.avatar-btn:active {
+  transform: scale(0.94);
+}
+
+.avatar-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Hero card: scheda suggerita */
+.hero-card {
+  position: relative;
+  background: linear-gradient(155deg, var(--accent-dim), var(--accent));
+  border-radius: var(--radius);
+  padding: var(--sp-5);
+  color: #07120c;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: var(--sp-5);
+}
+
+.hero-card .hero-kicker {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.65;
+}
+
+.hero-card .hero-name {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: var(--sp-2) 0 var(--sp-1);
+  letter-spacing: -0.02em;
+}
+
+.hero-card .hero-meta {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.hero-card .hero-illustration {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  width: 96px;
+  height: 96px;
+  opacity: 0.22;
+}
+
+.hero-start {
+  margin-top: var(--sp-5);
+  width: 100%;
+  padding: var(--sp-4);
+  border-radius: var(--radius-sm);
+  background: #07120c;
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--fs-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  transition: transform var(--t-fast);
+}
+
+.hero-start:active {
+  transform: scale(0.98);
+}
+
+/* Lista altre schede */
+.section-label {
+  margin: var(--sp-5) 0 var(--sp-3);
+}
+
+.template-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.template-card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+
+.template-card:active {
+  transform: scale(0.985);
+  background: var(--surface-2);
+}
+
+.template-card .tc-name {
+  font-weight: 700;
+  font-size: var(--fs-body);
+}
+
+.template-card .tc-meta {
+  font-size: var(--fs-small);
+  color: var(--text-dim-2);
+  margin-top: 2px;
+}
+
+.template-card .tc-arrow {
+  color: var(--text-dim-2);
+  flex-shrink: 0;
+}

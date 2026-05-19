@@ -1,0 +1,59 @@
+/* ============================================
+   LIFT — Design tokens
+   Dark only. 1 accent + neutri. Bariol font.
+   Vibe: sobrio + cazzaro leggero.
+   ============================================ */
+
+:root {
+  /* --- Accent (PLACEHOLDER: cambiabile in 1 punto) --- */
+  --accent: #4ade80;
+  --accent-dim: #2f9c5a;
+  --accent-ghost: rgba(74, 222, 128, 0.14);
+
+  /* --- Neutri (dark scale) --- */
+  --bg: #0d0f12;
+  --surface: #15181d;
+  --surface-2: #1d2128;
+  --surface-3: #272c35;
+  --border: #2e333d;
+  --border-soft: #23272f;
+
+  --text: #f2f4f7;
+  --text-dim: #aab2bf;
+  --text-dim-2: #6b7280;
+
+  /* --- Stati: sfumature accent + un rosso funzionale per errori --- */
+  --danger: #f45566;
+  --danger-ghost: rgba(244, 85, 102, 0.14);
+
+  /* --- Tipografia (Bariol, fallback finche il font non e verificato) --- */
+  --font: "Bariol", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --fs-display: 2rem;     /* 32px - hero / saluto */
+  --fs-title: 1.375rem;   /* 22px - titoli schermata */
+  --fs-body: 1rem;        /* 16px - corpo */
+  --fs-small: 0.8125rem;  /* 13px - meta info */
+  --fs-micro: 0.6875rem;  /* 11px - label uppercase */
+
+  /* --- Spaziatura (scala 4) --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* --- Shape: angoli morbidi 16-20px --- */
+  --radius: 18px;
+  --radius-sm: 12px;
+  --radius-pill: 999px;
+
+  /* --- Ombre leggere/sottili --- */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+  /* --- Motion --- */
+  --t-fast: 120ms ease;
+  --t-base: 220ms ease;
+}
