@@ -130,9 +130,16 @@ async function _goSaveAndAnalyze() {
         const fb = await apiPost("lift_generate_session_feedback", {
           sessionId: saveRes.sessionId,
         });
-        if (fb && fb.status === "OK") finState.feedbackText = fb.feedback;
+        if (fb && fb.status === "OK") {
+          finState.feedbackText = fb.feedback;
+        } else if (fb && fb.message) {
+          finState.feedbackError =
+            "AI: " + fb.message + (fb.step ? " (step: " + fb.step + ")" : "");
+          console.warn("[FB]", fb);
+        }
       } catch (e) {
-        /* feedback vuoto, mostriamo bottone rigenera */
+        finState.feedbackError = "Errore rete: " + (e.message || e);
+        console.error("[FB] fetch", e);
       }
       localStorage.removeItem(LS_KEY);
       _renderStep3();
@@ -186,10 +193,12 @@ function _renderStep3() {
     : "";
 
   const fb = finState.feedbackText;
+  const fbErr = finState.feedbackError;
   const feedbackHtml = fb
     ? `<div class="fin-feedback">${escapeHtml(fb).replace(/\n/g, "<br>")}</div>`
     : `<div class="fin-feedback empty">
         Feedback non disponibile al momento.
+        ${fbErr ? `<div style="margin-top:8px;color:var(--danger);font-size:.85em">${escapeHtml(fbErr)}</div>` : ""}
         <div class="fin-feedback-retry" id="fin-retry-fb">Rigenera feedback</div>
        </div>`;
 
