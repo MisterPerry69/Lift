@@ -53,6 +53,60 @@
   object-fit: cover;
 }
 
+/* Week bar */
+.week-bar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--sp-1);
+  margin: var(--sp-5) 0;
+}
+.wb-day {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 22px;
+  padding: var(--sp-3) 0;
+  text-align: center;
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+}
+.wb-day .wb-name {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.wb-day .wb-num {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 2px;
+}
+.wb-day.today {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+.wb-day.today .wb-num {
+  color: var(--bg);
+}
+.wb-day .wb-dot {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: none;
+}
+.wb-day.has-session .wb-dot {
+  display: block;
+}
+.wb-day.today.has-session .wb-dot {
+  background: var(--bg);
+}
+
 /* Hero card: scheda suggerita */
 .hero-card {
   position: relative;

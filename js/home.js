@@ -16,6 +16,45 @@ function randomGreeting(name) {
   return g.replace("{name}", name);
 }
 
+const DAY_NAMES = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
+function renderWeekBar(sessions) {
+  const wb = document.getElementById("week-bar");
+  if (!wb) return;
+  // settimana = da domenica (indice 0) come nei mockup
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(today.getDate() - today.getDay()); // domenica
+  const sessionDates = new Set(
+    sessions
+      .map((s) => {
+        if (!s.startedAt) return null;
+        const d = new Date(s.startedAt);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      })
+      .filter(Boolean)
+  );
+  const html = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const isToday = d.getTime() === today.getTime();
+    const hasSession = sessionDates.has(d.getTime());
+    html.push(
+      `<div class="wb-day${isToday ? " today" : ""}${
+        hasSession ? " has-session" : ""
+      }">
+        <span class="wb-dot"></span>
+        <div class="wb-name">${DAY_NAMES[i]}</div>
+        <div class="wb-num">${d.getDate()}</div>
+      </div>`
+    );
+  }
+  wb.innerHTML = html.join("");
+}
+
 function daysSinceLabel(days) {
   if (days === 0) return "oggi";
   if (days === 1) return "ieri";
@@ -25,6 +64,8 @@ function daysSinceLabel(days) {
 async function renderHome() {
   const data = await apiGet("lift_get_data");
   const { profile, streakWeeks, templates } = data;
+
+  renderWeekBar(data.recentSessions || []);
 
   // Saluto + streak
   document.getElementById("home-greeting").textContent = randomGreeting(

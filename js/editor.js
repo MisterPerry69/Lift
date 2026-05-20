@@ -52,54 +52,139 @@ function renderBlocks() {
     return;
   }
   wrap.innerHTML = blocks
-    .map((b, i) => {
-      const setsHtml = b.sets
-        .map(
-          (set, si) => `
-        <div class="set-config">
-          <span>S${si + 1}</span>
-          <input type="number" inputmode="numeric" min="1" max="50"
-            value="${set.targetReps}" data-b="${i}" data-s="${si}" class="set-reps" />
-          <span>reps</span>
-        </div>`
-        )
-        .join("");
-      return `
-      <div class="block-card">
-        <div class="bc-top">
-          <div>
-            <div class="bc-exname">${escapeHtml(b.exerciseName)}</div>
-            <div class="bc-muscle">${escapeHtml(b.muscle || "")}</div>
-          </div>
-          <button class="bc-del" data-del="${i}" aria-label="Rimuovi">${iconSvg(
-        "arrow-left"
-      )}</button>
-        </div>
-        <div class="sets-row">
-          ${setsHtml}
-          <button class="mini-select" data-addset="${i}">+ serie</button>
-          <select class="mini-select set-type" data-type="${i}">
-            <option value="normal"${
-              b.setType === "normal" ? " selected" : ""
-            }>Normale</option>
-            <option value="drop"${
-              b.setType === "drop" ? " selected" : ""
-            }>Drop set</option>
-            <option value="rest_pause"${
-              b.setType === "rest_pause" ? " selected" : ""
-            }>Rest-pause</option>
-          </select>
-          <div class="set-config">
-            <span>Rest</span>
-            <input type="text" inputmode="numeric" placeholder="—"
-              value="${b.restAfterSetSec ? _fmtRest(b.restAfterSetSec) : ""}"
-              data-rest="${i}" class="set-rest" style="width:54px" />
-          </div>
-        </div>
-      </div>`;
-    })
+    .map((b, i) => (b.mode === "custom" ? _blockCustomHtml(b, i) : _blockSimpleHtml(b, i)))
     .join("");
+  _attachBlockHandlers(wrap);
+}
 
+function _blockHeader(b, i) {
+  return `
+    <div class="bc-top">
+      <div>
+        <div class="bc-exname">${escapeHtml(b.exerciseName)}</div>
+        <div class="bc-muscle">${escapeHtml(b.muscle || "")}</div>
+      </div>
+      <button class="bc-del" data-del="${i}" aria-label="Rimuovi">×</button>
+    </div>`;
+}
+
+/* --- Vista SIMPLE: NxR + REST + bottone CUSTOM --- */
+function _blockSimpleHtml(b, i) {
+  const nSets = (b.sets || []).length || 3;
+  const reps = (b.sets && b.sets[0] && b.sets[0].targetReps) || 8;
+  const rest = b.restAfterSetSec ? _fmtRest(b.restAfterSetSec) : "";
+  return `
+    <div class="block-card">
+      ${_blockHeader(b, i)}
+      <div class="simple-row">
+        <div class="simple-field">
+          <input type="number" inputmode="numeric" min="1" max="20"
+                 value="${nSets}" data-simple-n="${i}" />
+          <span class="simple-lab">SERIE</span>
+        </div>
+        <div class="simple-x">×</div>
+        <div class="simple-field">
+          <input type="number" inputmode="numeric" min="1" max="50"
+                 value="${reps}" data-simple-r="${i}" />
+          <span class="simple-lab">REPS</span>
+        </div>
+      </div>
+      <div class="simple-row simple-row-rest">
+        <div class="simple-field simple-field-rest">
+          <input type="text" inputmode="numeric" placeholder="—"
+                 value="${rest}" data-simple-rest="${i}" />
+          <span class="simple-lab">REST</span>
+        </div>
+      </div>
+      <button class="custom-btn" data-tocustom="${i}">CUSTOM</button>
+    </div>`;
+}
+
+/* --- Vista CUSTOM: serie-per-serie + tipo set + rest --- */
+function _blockCustomHtml(b, i) {
+  const setsHtml = (b.sets || [])
+    .map(
+      (set, si) => `
+      <div class="set-config">
+        <span>S${si + 1}</span>
+        <input type="number" inputmode="numeric" min="1" max="50"
+          value="${set.targetReps}" data-b="${i}" data-s="${si}" class="set-reps" />
+        <span>reps</span>
+      </div>`
+    )
+    .join("");
+  return `
+    <div class="block-card">
+      ${_blockHeader(b, i)}
+      <div class="sets-row">
+        ${setsHtml}
+        <button class="mini-select" data-addset="${i}">+ serie</button>
+        <select class="mini-select set-type" data-type="${i}">
+          <option value="normal"${
+            b.setType === "normal" ? " selected" : ""
+          }>Normale</option>
+          <option value="drop"${
+            b.setType === "drop" ? " selected" : ""
+          }>Drop set</option>
+          <option value="rest_pause"${
+            b.setType === "rest_pause" ? " selected" : ""
+          }>Rest-pause</option>
+        </select>
+        <div class="set-config">
+          <span>Rest</span>
+          <input type="text" inputmode="numeric" placeholder="—"
+            value="${b.restAfterSetSec ? _fmtRest(b.restAfterSetSec) : ""}"
+            data-rest="${i}" class="set-rest" style="width:54px" />
+        </div>
+      </div>
+      <button class="custom-btn" data-tosimple="${i}">← TORNA A SEMPLICE</button>
+    </div>`;
+}
+
+function _attachBlockHandlers(wrap) {
+  // SIMPLE
+  wrap.querySelectorAll("[data-simple-n]").forEach((inp) => {
+    inp.onchange = (e) => {
+      const bi = +e.target.dataset.simpleN;
+      const n = Math.max(1, parseInt(e.target.value, 10) || 1);
+      const b = editorState.structure.blocks[bi];
+      const reps = (b.sets[0] && b.sets[0].targetReps) || 8;
+      b.sets = Array.from({ length: n }, () => ({ targetReps: reps }));
+    };
+  });
+  wrap.querySelectorAll("[data-simple-r]").forEach((inp) => {
+    inp.onchange = (e) => {
+      const bi = +e.target.dataset.simpleR;
+      const reps = Math.max(1, parseInt(e.target.value, 10) || 1);
+      editorState.structure.blocks[bi].sets.forEach(
+        (s) => (s.targetReps = reps)
+      );
+    };
+  });
+  wrap.querySelectorAll("[data-simple-rest]").forEach((inp) => {
+    inp.onchange = (e) => {
+      const bi = +e.target.dataset.simpleRest;
+      const sec = _parseRest(e.target.value);
+      if (sec > 0) editorState.structure.blocks[bi].restAfterSetSec = sec;
+      else delete editorState.structure.blocks[bi].restAfterSetSec;
+      e.target.value = sec > 0 ? _fmtRest(sec) : "";
+    };
+  });
+  wrap.querySelectorAll("[data-tocustom]").forEach((btn) => {
+    btn.onclick = () => {
+      editorState.structure.blocks[+btn.dataset.tocustom].mode = "custom";
+      renderBlocks();
+    };
+  });
+  wrap.querySelectorAll("[data-tosimple]").forEach((btn) => {
+    btn.onclick = () => {
+      const bi = +btn.dataset.tosimple;
+      editorState.structure.blocks[bi].mode = "simple";
+      renderBlocks();
+    };
+  });
+
+  // CUSTOM
   wrap.querySelectorAll(".set-reps").forEach((inp) => {
     inp.onchange = (e) => {
       const bi = +e.target.dataset.b,
@@ -115,12 +200,6 @@ function renderBlocks() {
       renderBlocks();
     };
   });
-  wrap.querySelectorAll("[data-del]").forEach((btn) => {
-    btn.onclick = () => {
-      editorState.structure.blocks.splice(+btn.dataset.del, 1);
-      renderBlocks();
-    };
-  });
   wrap.querySelectorAll(".set-type").forEach((sel) => {
     sel.onchange = (e) => {
       editorState.structure.blocks[+e.target.dataset.type].setType =
@@ -133,8 +212,15 @@ function renderBlocks() {
       const sec = _parseRest(e.target.value);
       if (sec > 0) editorState.structure.blocks[bi].restAfterSetSec = sec;
       else delete editorState.structure.blocks[bi].restAfterSetSec;
-      // riformatta il display (es. "90" -> "1:30")
       e.target.value = sec > 0 ? _fmtRest(sec) : "";
+    };
+  });
+
+  // DELETE
+  wrap.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.onclick = () => {
+      editorState.structure.blocks.splice(+btn.dataset.del, 1);
+      renderBlocks();
     };
   });
 }
@@ -197,6 +283,7 @@ function filterExercises(q) {
       const ex = EXERCISE_DB.find((x) => x.id === it.dataset.ex);
       editorState.structure.blocks.push({
         type: "single",
+        mode: "simple",
         exerciseRef: "public:" + ex.id,
         exerciseName: ex.name,
         muscle: ex.m,

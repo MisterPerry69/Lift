@@ -110,6 +110,72 @@
   font-size: var(--fs-micro);
 }
 
+/* Vista SIMPLE del blocco: NxR + REST + bottone CUSTOM */
+.simple-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.simple-row-rest {
+  margin-bottom: var(--sp-3);
+}
+.simple-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+}
+.simple-field-rest {
+  flex: 0 1 60%;
+}
+.simple-field input {
+  width: 56px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+.simple-field input::-webkit-outer-spin-button,
+.simple-field input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.simple-lab {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.simple-x {
+  font-size: 1.2rem;
+  color: var(--text-dim-2);
+  font-weight: 700;
+}
+.custom-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
 .add-block-btn,
 .save-template-btn {
   width: 100%;
