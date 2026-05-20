@@ -78,6 +78,44 @@ ul {
   stroke-width: 2;
 }
 
+/* Loader globale */
+#global-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 15, 18, 0.72);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#global-loader.show {
+  display: flex;
+}
+#global-loader .gl-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+}
+#global-loader .gl-spin {
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--surface-3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: gl-rot 0.8s linear infinite;
+}
+#global-loader .gl-msg {
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+}
+@keyframes gl-rot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Visually hidden but accessible */
 .sr-only {
   position: absolute;

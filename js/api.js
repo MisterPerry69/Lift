@@ -24,22 +24,64 @@ async function _parse(res) {
   }
 }
 
+/* ---- Overlay di caricamento globale ---- */
+let _loadingCount = 0;
+function _showLoading(msg) {
+  _loadingCount++;
+  let o = document.getElementById("global-loader");
+  if (!o) {
+    o = document.createElement("div");
+    o.id = "global-loader";
+    o.innerHTML =
+      '<div class="gl-box"><div class="gl-spin"></div><div class="gl-msg"></div></div>';
+    document.body.appendChild(o);
+  }
+  o.querySelector(".gl-msg").textContent = msg || "Caricamento…";
+  o.classList.add("show");
+}
+function _hideLoading() {
+  _loadingCount = Math.max(0, _loadingCount - 1);
+  if (_loadingCount === 0) {
+    const o = document.getElementById("global-loader");
+    if (o) o.classList.remove("show");
+  }
+}
+
+const LOADING_MSG = {
+  lift_get_data: "Carico i tuoi dati…",
+  lift_get_template: "Preparo la scheda…",
+  lift_save_template: "Salvo la scheda…",
+  lift_save_session: "Salvo la sessione…",
+  lift_generate_session_feedback: "Analisi in corso…",
+  lift_suggest_starting_weight: "Calcolo un peso…",
+};
+
 async function apiGet(action, params = {}) {
   if (USE_MOCK) return mockResponse(action, params);
-  const qs = new URLSearchParams({ action, ...params }).toString();
-  const res = await fetch(`${GAS_URL}?${qs}`);
-  return _parse(res);
+  _showLoading(LOADING_MSG[action]);
+  try {
+    const qs = new URLSearchParams({ action, ...params }).toString();
+    const res = await fetch(`${GAS_URL}?${qs}`);
+    return await _parse(res);
+  } finally {
+    _hideLoading();
+  }
 }
 
 async function apiPost(action, payload = {}) {
   if (USE_MOCK) return mockResponse(action, payload);
-  // text/plain evita il preflight CORS con GAS
-  const res = await fetch(GAS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action, ...payload }),
-  });
-  return _parse(res);
+  _showLoading(LOADING_MSG[action]);
+  try {
+    // text/plain evita il preflight CORS con GAS
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action, ...payload }),
+    });
+    return await _parse(res);
+  } finally {
+    _hideLoading();
+  }
 }
 
 function mockResponse(action) {

@@ -199,7 +199,7 @@ function openNum(kind, current) {
       <div class="num-sheet">
         <div class="num-display">
           <button class="num-step" id="num-minus">−</button>
-          <input id="num-input" inputmode="decimal" />
+          <input id="num-input" readonly />
           <button class="num-step" id="num-plus">+</button>
         </div>
         <div class="num-chips" id="num-chips"></div>
@@ -235,10 +235,6 @@ function openNum(kind, current) {
     m.classList.remove("open");
   };
   m.classList.add("open");
-  setTimeout(() => {
-    input.focus();
-    input.select();
-  }, 80);
 }
 function num(v) {
   return parseFloat(v) || 0;
