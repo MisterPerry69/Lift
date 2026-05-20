@@ -116,6 +116,64 @@ ul {
   }
 }
 
+/* Modale custom (sostituisce confirm/alert nativi) */
+.dlg {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 15, 18, 0.72);
+  backdrop-filter: blur(2px);
+  z-index: 210;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+}
+.dlg.show {
+  display: flex;
+}
+.dlg-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-5);
+  max-width: 360px;
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+.dlg-title {
+  font-weight: 700;
+  font-size: var(--fs-body);
+  margin-bottom: var(--sp-2);
+}
+.dlg-msg {
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  margin-bottom: var(--sp-5);
+}
+.dlg-actions {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+}
+.dlg-btn {
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: var(--fs-small);
+}
+.dlg-btn-cancel {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.dlg-btn-ok {
+  background: var(--accent);
+  color: #07120c;
+}
+.dlg-btn-danger {
+  background: var(--danger-ghost);
+  color: var(--danger);
+}
+
 /* Visually hidden but accessible */
 .sr-only {
   position: absolute;

@@ -16,8 +16,7 @@ async function startSession(templateId) {
   const data = await apiGet("lift_get_data");
   const tpl = (data.templates || []).find((t) => t.id === templateId);
   if (!tpl) {
-    alert("Scheda non trovata");
-    return;
+    return liftAlert("Scheda non trovata");
   }
   // serve la struttura completa: la rileggo dal backend
   const full = await apiPost("lift_get_template", { id: templateId });
@@ -411,8 +410,12 @@ function beep() {
 
 /* ---------- fine sessione ---------- */
 
-function confirmEnd() {
-  if (confirm("Terminare la sessione?")) openFinish();
+async function confirmEnd() {
+  const ok = await liftConfirm(
+    "La sessione verra salvata. Vuoi proseguire?",
+    { title: "Terminare la sessione?", okLabel: "Termina", danger: true }
+  );
+  if (ok) openFinish();
 }
 
 function openFinish() {

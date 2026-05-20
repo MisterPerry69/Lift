@@ -101,8 +101,4 @@ async function renderHome() {
   });
 }
 
-function startSession(templateId) {
-  // TODO: avvio modalita esecuzione (prossimo step)
-  console.log("Avvio sessione:", templateId);
-  alert("Avvio sessione: " + templateId + "\n(esecuzione in arrivo)");
-}
+// startSession() vera vive in exec.js

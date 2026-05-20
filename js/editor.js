@@ -182,12 +182,10 @@ function filterExercises(q) {
 async function saveEditorTemplate() {
   const s = editorState;
   if (!s.name.trim()) {
-    alert("Dai un nome alla scheda");
-    return;
+    return liftAlert("Dai un nome alla scheda");
   }
   if (s.structure.blocks.length === 0) {
-    alert("Aggiungi almeno un esercizio");
-    return;
+    return liftAlert("Aggiungi almeno un esercizio");
   }
   const btn = document.getElementById("ed-save");
   btn.textContent = "Salvataggio…";
@@ -202,7 +200,7 @@ async function saveEditorTemplate() {
     showScreen("home");
     await renderHome();
   } catch (e) {
-    alert("Errore salvataggio: " + (e.message || e));
+    liftAlert("Errore salvataggio: " + (e.message || e), "Errore");
     btn.textContent = "Salva scheda";
     btn.disabled = false;
   }
