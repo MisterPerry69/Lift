@@ -10,10 +10,10 @@ let finState = null;
 function renderFinish(sessionState) {
   finState = {
     raw: sessionState,
-    mood: 7,
-    energy: 7,
+    mood: null, // 1..5 (low -> peak)
+    energy: null, // 1..5 (sotto terra -> fulmine)
     notes: "",
-    saveResult: null, // {sessionId, totalVolume, prsHit, durationSec}
+    saveResult: null,
     feedbackText: "",
   };
   showScreen("finish");
@@ -28,45 +28,65 @@ function renderFinish(sessionState) {
 
 /* ---------- STEP 1: mood / energia / note ---------- */
 
+const MOOD_LABELS = ["GIU", "BLAH", "OK", "BENE", "TOP"];
+const ENERGY_LABELS = ["KO", "SCARICA", "MEDIA", "PIENA", "FULMINE"];
+
+function _chipsHtml(kind) {
+  // kind = 'mood' | 'energy'. Valori 1..5.
+  const labels = kind === "mood" ? MOOD_LABELS : ENERGY_LABELS;
+  return [1, 2, 3, 4, 5]
+    .map(
+      (v, i) => `
+      <button class="fin-chip" data-${kind}="${v}" type="button" title="${labels[i]}">
+        ${iconSvg(kind + "-" + v)}
+        <span class="fc-lab">${labels[i]}</span>
+      </button>`
+    )
+    .join("");
+}
+
 function _finStep1Html() {
   return `
     <h1 class="fin-title">Sessione chiusa</h1>
-    <p class="fin-sub">Come e andata? Pochi numeri e via.</p>
+    <p class="fin-sub">Come e andata? Due tap e via.</p>
 
     <div class="fin-block">
-      <div class="fin-block-label">
-        <span class="fl-name">Mood</span>
-        <span class="fl-val" id="fin-mood-val">7</span>
-      </div>
-      <input type="range" min="1" max="10" value="7" id="fin-mood" class="fin-slider" />
+      <div class="fin-block-label">Mood</div>
+      <div class="fin-chips" id="fin-mood-chips">${_chipsHtml("mood")}</div>
     </div>
 
     <div class="fin-block">
-      <div class="fin-block-label">
-        <span class="fl-name">Energia</span>
-        <span class="fl-val" id="fin-energy-val">7</span>
-      </div>
-      <input type="range" min="1" max="10" value="7" id="fin-energy" class="fin-slider" />
+      <div class="fin-block-label">Energia</div>
+      <div class="fin-chips" id="fin-energy-chips">${_chipsHtml("energy")}</div>
     </div>
 
     <textarea id="fin-notes" class="fin-notes"
       placeholder="Note (opzionale): come ti sentivi, fastidi, motivazione..."></textarea>
 
-    <button id="fin-save" class="fin-save-btn">Salva sessione</button>
+    <button id="fin-save" class="fin-save-btn" disabled>Salva sessione</button>
   `;
 }
 
 function _wireStep1() {
-  const moodInp = document.getElementById("fin-mood");
-  const energyInp = document.getElementById("fin-energy");
-  moodInp.oninput = (e) => {
-    finState.mood = +e.target.value;
-    document.getElementById("fin-mood-val").textContent = e.target.value;
+  const updateSaveBtn = () => {
+    document.getElementById("fin-save").disabled =
+      finState.mood == null || finState.energy == null;
   };
-  energyInp.oninput = (e) => {
-    finState.energy = +e.target.value;
-    document.getElementById("fin-energy-val").textContent = e.target.value;
+  const wireChips = (containerId, kind) => {
+    const c = document.getElementById(containerId);
+    c.querySelectorAll(".fin-chip").forEach((chip) => {
+      chip.onclick = () => {
+        const val = +chip.dataset[kind];
+        finState[kind] = val;
+        c.querySelectorAll(".fin-chip").forEach((x) =>
+          x.classList.toggle("selected", +x.dataset[kind] === val)
+        );
+        updateSaveBtn();
+      };
+    });
   };
+  wireChips("fin-mood-chips", "mood");
+  wireChips("fin-energy-chips", "energy");
   document.getElementById("fin-save").onclick = _goSaveAndAnalyze;
 }
 

@@ -30,7 +30,7 @@
   margin-bottom: var(--sp-6);
 }
 
-/* Slider mood/energia */
+/* Mood / Energia: 3 chip con icone Lucide */
 .fin-block {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -39,46 +39,49 @@
   margin-bottom: var(--sp-3);
 }
 .fin-block-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  font-weight: 700;
   margin-bottom: var(--sp-3);
 }
-.fin-block-label .fl-name {
+.fin-chips {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--sp-1);
+}
+.fin-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) 2px;
+  color: var(--text-dim);
+  transition: transform var(--t-fast), background var(--t-fast),
+    border-color var(--t-fast), color var(--t-fast);
+}
+.fin-chip svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.8;
+}
+.fin-chip .fc-lab {
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   font-weight: 700;
 }
-.fin-block-label .fl-val {
-  font-size: 1.4rem;
-  font-weight: 800;
+.fin-chip:active {
+  transform: scale(0.97);
+}
+.fin-chip.selected {
+  background: var(--accent-ghost);
+  border-color: var(--accent);
   color: var(--accent);
-  font-variant-numeric: tabular-nums;
 }
-.fin-slider {
-  width: 100%;
-  -webkit-appearance: none;
-  appearance: none;
-  background: var(--surface-3);
-  height: 6px;
-  border-radius: var(--radius-pill);
-  outline: none;
-}
-.fin-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-}
-.fin-slider::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: none;
-  cursor: pointer;
+.fin-save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .fin-notes {
