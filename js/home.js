@@ -59,6 +59,8 @@ async function renderHome() {
       .querySelector("#create-first-template")
       .addEventListener("click", () => openEditor(null));
     document.getElementById("template-list").innerHTML = "";
+    const newBtn0 = document.getElementById("home-new-template");
+    if (newBtn0) newBtn0.onclick = () => openEditor(null);
     return;
   }
 
@@ -99,6 +101,9 @@ async function renderHome() {
       startSession(card.dataset.template)
     );
   });
+
+  const newBtn = document.getElementById("home-new-template");
+  if (newBtn) newBtn.onclick = () => openEditor(null);
 }
 
 // startSession() vera vive in exec.js

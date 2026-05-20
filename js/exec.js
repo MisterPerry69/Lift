@@ -31,8 +31,8 @@ async function startSession(templateId) {
     blocks: structure.blocks || [],
     bi: 0, // block index
     si: 0, // set index dentro il blocco
-    done: [], // {exerciseRef, exerciseName, muscleGroup, type, weight, reps, note}
-    lastWeights: {}, // exerciseRef -> ultimo peso usato in questa sessione
+    done: [], // {exerciseRef, exerciseName, muscleGroup, type, weight, reps, note, bi, si}
+    previousByExercise: full.previousByExercise || {},
   };
   persist();
   acquireWakeLock();
@@ -107,6 +107,34 @@ function totalSetsOfBlock(b) {
   return (b.sets || []).length || 1;
 }
 
+/**
+ * Peso/reps suggeriti per la serie corrente, in ordine di preferenza:
+ * 1. Serie precedente di QUESTA sessione (stesso esercizio, ultima done valida)
+ * 2. Set corrispondente (per indice) della sessione precedente
+ * 3. Primo set della sessione precedente (se l'indice non esiste)
+ * 4. null se non c'e proprio nulla
+ */
+function suggestedFor(bi, si) {
+  const b = ex.blocks[bi];
+  const exo = curExerciseOfBlock(b);
+  // 1. serie precedente di oggi sullo stesso esercizio
+  for (let i = ex.done.length - 1; i >= 0; i--) {
+    const d = ex.done[i];
+    if (d.exerciseRef === exo.ref && d.type !== "skipped" && d.weight != null) {
+      return { weight: d.weight, reps: d.reps, source: "today" };
+    }
+  }
+  // 2/3. sessione precedente
+  const prev = (ex.previousByExercise || {})[exo.ref];
+  if (prev && prev.length > 0) {
+    const set = prev[si] || prev[0];
+    if (set && set.weight != null) {
+      return { weight: set.weight, reps: set.reps, source: "previous" };
+    }
+  }
+  return null;
+}
+
 /* ---------- render ---------- */
 
 function renderExec() {
@@ -117,8 +145,15 @@ function renderExec() {
   const b = curBlock();
   const exo = curExerciseOfBlock(b);
   const totSets = totalSetsOfBlock(b);
-  const lastW = ex.lastWeights[exo.ref];
   const targetReps = (b.sets && b.sets[ex.si] && b.sets[ex.si].targetReps) || 8;
+  const sug = suggestedFor(ex.bi, ex.si);
+  const sugW = sug ? sug.weight : null;
+  const sugR = sug ? sug.reps : targetReps;
+  const sugLabel = !sug
+    ? "Nessun riferimento, parti come ti senti"
+    : sug.source === "today"
+    ? "Serie precedente: " + sug.weight + " kg × " + sug.reps
+    : "Ultima volta: " + sug.weight + " kg × " + sug.reps;
 
   root.innerHTML = `
     <div class="exec-header">
@@ -133,20 +168,18 @@ function renderExec() {
     ex.blocks.length
   }</div>
       <div class="exec-exname">${escapeHtml(exo.name)}</div>
-      <div class="exec-prev">${
-        lastW ? "Ultimo: " + lastW + " kg" : "Primo set di questo esercizio"
-      }</div>
+      <div class="exec-prev">${sugLabel}</div>
       <div class="exec-set-nav">Serie ${ex.si + 1} / ${totSets} · obiettivo ${targetReps} reps</div>
       <div class="exec-controls">
         <button class="big-num" id="ex-weight">
-          <div class="bn-val" id="exw">${lastW || "—"}</div>
+          <div class="bn-val" id="exw">${sugW != null ? sugW : "—"}</div>
           <div class="bn-lab">peso kg</div>
         </button>
         <button class="big-check" id="ex-check" aria-label="Conferma">${iconSvg(
           "check"
         )}</button>
         <button class="big-num" id="ex-reps">
-          <div class="bn-val" id="exr">${targetReps}</div>
+          <div class="bn-val" id="exr">${sugR != null ? sugR : "—"}</div>
           <div class="bn-lab">reps</div>
         </button>
       </div>
@@ -262,7 +295,6 @@ function confirmSet() {
     bi: ex.bi,
     si: ex.si,
   });
-  ex.lastWeights[exo.ref] = weight;
   persist();
   showUndo();
   advance();

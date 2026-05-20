@@ -89,6 +89,12 @@ function renderBlocks() {
               b.setType === "rest_pause" ? " selected" : ""
             }>Rest-pause</option>
           </select>
+          <div class="set-config">
+            <span>Rest</span>
+            <input type="text" inputmode="numeric" placeholder="—"
+              value="${b.restAfterSetSec ? _fmtRest(b.restAfterSetSec) : ""}"
+              data-rest="${i}" class="set-rest" style="width:54px" />
+          </div>
         </div>
       </div>`;
     })
@@ -121,6 +127,32 @@ function renderBlocks() {
         e.target.value;
     };
   });
+  wrap.querySelectorAll(".set-rest").forEach((inp) => {
+    inp.onchange = (e) => {
+      const bi = +e.target.dataset.rest;
+      const sec = _parseRest(e.target.value);
+      if (sec > 0) editorState.structure.blocks[bi].restAfterSetSec = sec;
+      else delete editorState.structure.blocks[bi].restAfterSetSec;
+      // riformatta il display (es. "90" -> "1:30")
+      e.target.value = sec > 0 ? _fmtRest(sec) : "";
+    };
+  });
+}
+
+/** Accetta "90", "1:30", "1m30", "2m" -> secondi. 0 = nessun rest. */
+function _parseRest(v) {
+  if (!v) return 0;
+  v = String(v).trim().toLowerCase();
+  let m = v.match(/^(\d+):(\d+)$/);
+  if (m) return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  m = v.match(/^(\d+)m(\d+)?$/);
+  if (m) return parseInt(m[1], 10) * 60 + parseInt(m[2] || "0", 10);
+  const n = parseInt(v, 10);
+  return isNaN(n) ? 0 : n;
+}
+function _fmtRest(sec) {
+  if (!sec) return "";
+  return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
 }
 
 /* ---------- Picker esercizi ---------- */
