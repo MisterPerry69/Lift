@@ -80,6 +80,7 @@ async function boot() {
   screens.home = document.getElementById("screen-home");
   screens.editor = document.getElementById("screen-editor");
   screens.exec = document.getElementById("screen-exec");
+  screens.finish = document.getElementById("screen-finish");
   screens.profile = document.getElementById("screen-profile");
 
   // se c'e una sessione attiva non terminata, riprendila

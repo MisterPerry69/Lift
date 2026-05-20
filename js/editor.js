@@ -289,6 +289,7 @@ function filterExercises(q) {
         muscle: ex.m,
         setType: "normal",
         sets: [{ targetReps: 8 }, { targetReps: 8 }, { targetReps: 8 }],
+        restAfterSetSec: 90,
       });
       document.getElementById("ex-picker").classList.remove("open");
       renderBlocks();
