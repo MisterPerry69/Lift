@@ -76,11 +76,12 @@ async function renderHome() {
     ? `<strong>${streakWeeks}</strong> settimane di fila`
     : "Nessuna streak attiva";
 
-  // Avatar
+  // Avatar -> apre il profilo (menu globale)
   const avatarBtn = document.getElementById("avatar-btn");
   avatarBtn.innerHTML = profile.avatarUrl
     ? `<img src="${profile.avatarUrl}" alt="Profilo">`
     : iconSvg("user");
+  avatarBtn.onclick = openProfile;
 
   // Hero = scheda suggerita (fatta meno di recente)
   const suggested = pickSuggestedTemplate(templates);
