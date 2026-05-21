@@ -28,13 +28,13 @@ function _profileHtml(p) {
     { id: "schede", icon: "clipboard", label: "Schede allenamenti" },
     { id: "esercizi", icon: "library", label: "Esercizi", soon: true },
     { id: "peso", icon: "scale", label: "Aggiorna peso" },
-    { id: "storico", icon: "history", label: "Storico allenamenti", soon: true },
+    { id: "storico", icon: "history", label: "Storico allenamenti" },
     { id: "stats", icon: "bar-chart", label: "Statistiche", soon: true },
     { id: "home", icon: "home", label: "Homepage" },
   ];
   return `
     <div class="prof-head">
-      <div class="prof-avatar">${iconSvg("user")}</div>
+      <div class="prof-avatar">${renderAvatar(p, "profile")}</div>
       <div>
         <div class="prof-name">${escapeHtml(p.name || "Ale")}</div>
         <div class="prof-meta">${escapeHtml(weight)} · ${escapeHtml(last)}</div>

@@ -78,9 +78,7 @@ async function renderHome() {
 
   // Avatar -> apre il profilo (menu globale)
   const avatarBtn = document.getElementById("avatar-btn");
-  avatarBtn.innerHTML = profile.avatarUrl
-    ? `<img src="${profile.avatarUrl}" alt="Profilo">`
-    : iconSvg("user");
+  avatarBtn.innerHTML = renderAvatar(profile, "home");
   avatarBtn.onclick = openProfile;
 
   // Hero = scheda suggerita (fatta meno di recente)

@@ -4,6 +4,44 @@
 
 const screens = {};
 
+/* ============================================
+   Avatar personalizzato.
+   - Carica un'immagine se l'utente la mette in assets/avatar.png (o .jpg).
+   - Se 404, fallback all'icona user di Lucide.
+   - Si controlla 1 volta a session (cache in memoria).
+   ============================================ */
+const AVATAR_CANDIDATES = ["assets/avatar.png", "assets/avatar.jpg"];
+let _avatarUrl = null; // null = non ancora controllato, "" = nessuno, "..." = url valido
+let _avatarChecked = false;
+
+function _probeAvatar() {
+  if (_avatarChecked) return;
+  _avatarChecked = true;
+  AVATAR_CANDIDATES.forEach((path) => {
+    const img = new Image();
+    img.onload = () => {
+      if (!_avatarUrl) {
+        _avatarUrl = path;
+        // ridisegno gli avatar gia in DOM
+        document.querySelectorAll("[data-avatar]").forEach((el) => {
+          el.outerHTML = `<img src="${path}" alt="Profilo" data-avatar>`;
+        });
+      }
+    };
+    img.src = path;
+  });
+}
+
+function renderAvatar(profile, _ctx) {
+  _probeAvatar();
+  // priorita: avatarUrl dal backend > file locale rilevato > fallback icona
+  const url = (profile && profile.avatarUrl) || _avatarUrl;
+  if (url) return `<img src="${url}" alt="Profilo" data-avatar>`;
+  // marco l'svg per poterlo sostituire al volo quando il probe completa
+  const svg = iconSvg("user");
+  return svg.replace("<svg", '<svg data-avatar');
+}
+
 /* ---- Modali custom (sostituiscono confirm/alert nativi) ---- */
 function liftDialog(opts) {
   return new Promise((resolve) => {
