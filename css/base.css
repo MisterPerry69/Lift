@@ -40,6 +40,15 @@ input {
   color: inherit;
 }
 
+/* Scrollbar invisibili (mobile-style) ovunque */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/old Edge */
+}
+*::-webkit-scrollbar {
+  display: none; /* Chromium / Safari */
+}
+
 /* Niente frecce su input numerici (Chrome/Safari/Firefox) */
 input[type="number"] {
   -moz-appearance: textfield;

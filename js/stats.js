@@ -21,11 +21,13 @@ async function openStats() {
       <button class="stats-tab active" data-tab="freq">Frequenza</button>
       <button class="stats-tab" data-tab="pr">PR</button>
       <button class="stats-tab" data-tab="trend">Trend</button>
+      <button class="stats-tab" data-tab="weight">Peso</button>
     </div>
 
     <div id="view-freq" class="stats-view active"></div>
     <div id="view-pr" class="stats-view"></div>
     <div id="view-trend" class="stats-view"></div>
+    <div id="view-weight" class="stats-view"></div>
   `;
 
   document.getElementById("st-back").onclick = openProfile;
@@ -44,6 +46,7 @@ async function openStats() {
   _renderFreq();
   _renderPRs();
   _renderTrend(); // setup picker subito, chart al primo trigger
+  _renderWeight(); // render placeholder, chart al primo switch
 }
 
 function _switchTab(name) {
@@ -54,9 +57,11 @@ function _switchTab(name) {
     v.classList.toggle("active", v.id === "view-" + name)
   );
   if (name === "trend" && document.getElementById("trend-picker")) {
-    // se la prima volta che entro in trend ho un esercizio gia selezionato, disegno
     const sel = document.getElementById("trend-picker");
     if (sel.value) _drawTrendChart(sel.value);
+  }
+  if (name === "weight") {
+    _drawWeightChart();
   }
 }
 
@@ -216,6 +221,89 @@ async function _loadChartJs() {
     };
     s.onerror = () => reject(new Error("Chart.js non caricato"));
     document.head.appendChild(s);
+  });
+}
+
+/* ---------- VISTA 4: PESO CORPOREO ---------- */
+
+let _weightChart = null;
+
+function _renderWeight() {
+  const v = document.getElementById("view-weight");
+  v.innerHTML = `
+    <div id="weight-summary" class="stats-summary" style="margin-top:0;margin-bottom:var(--sp-4)"></div>
+    <div class="trend-chart-wrap">
+      <canvas id="weight-canvas"></canvas>
+    </div>
+  `;
+}
+
+async function _drawWeightChart() {
+  await _loadChartJs();
+  const boot = await apiGet("lift_get_data", {}, { silent: true });
+  const log = ((boot && boot.weightLog) || [])
+    .filter((w) => w.weightKg)
+    .map((w) => ({
+      date: w.date ? new Date(w.date) : new Date(),
+      weight: parseFloat(w.weightKg),
+    }))
+    .sort((a, b) => a.date - b.date);
+
+  const sum = document.getElementById("weight-summary");
+  if (log.length === 0) {
+    if (sum)
+      sum.innerHTML = `<div class="empty-state" style="grid-column:1/-1">Nessuna registrazione peso ancora.</div>`;
+    return;
+  }
+  const current = log[log.length - 1].weight;
+  const min = Math.min.apply(null, log.map((p) => p.weight));
+  const max = Math.max.apply(null, log.map((p) => p.weight));
+  if (sum)
+    sum.innerHTML = `
+      <div class="stats-card"><div class="v">${current.toFixed(1)}</div><div class="l">attuale kg</div></div>
+      <div class="stats-card"><div class="v">${min.toFixed(1)}</div><div class="l">min kg</div></div>
+      <div class="stats-card"><div class="v">${max.toFixed(1)}</div><div class="l">max kg</div></div>
+    `;
+
+  const ctx = document.getElementById("weight-canvas");
+  if (!ctx) return;
+  if (_weightChart) _weightChart.destroy();
+  _weightChart = new window.Chart(ctx, {
+    type: "line",
+    data: {
+      labels: log.map((p) =>
+        p.date.toLocaleDateString("it-IT", { day: "2-digit", month: "short" })
+      ),
+      datasets: [
+        {
+          label: "Peso (kg)",
+          data: log.map((p) => p.weight),
+          borderColor: getComputedStyle(document.body)
+            .getPropertyValue("--accent")
+            .trim() || "#4ade80",
+          backgroundColor: "rgba(74,222,128,0.18)",
+          tension: 0.25,
+          fill: true,
+          pointRadius: 3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          ticks: { color: "#9aa3ad", font: { size: 10 } },
+          grid: { color: "rgba(255,255,255,0.04)" },
+        },
+        y: {
+          ticks: { color: "#9aa3ad", font: { size: 10 } },
+          grid: { color: "rgba(255,255,255,0.06)" },
+          beginAtZero: false,
+        },
+      },
+    },
   });
 }
 

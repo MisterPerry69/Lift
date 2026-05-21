@@ -218,6 +218,22 @@
   display: flex;
 }
 
+.ex-picker-head {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  margin-bottom: var(--sp-3);
+}
+.ex-picker-head .ex-search {
+  margin-bottom: 0;
+  flex: 1;
+}
+.ex-picker-head .icon-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 1.4rem;
+}
+
 .ex-search {
   width: 100%;
   background: var(--surface-2);

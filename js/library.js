@@ -33,7 +33,12 @@ async function openLibrary() {
       <div class="history-title">Esercizi</div>
     </div>
     <input class="lib-search" id="lib-search" placeholder="Cerca esercizio…" />
-    <div class="lib-filters" id="lib-filters"></div>
+    <select class="trend-picker" id="lib-muscle-sel">
+      <option value="">Tutti i muscoli</option>
+      ${COMMON_MUSCLES.map(
+        (m) => `<option value="${m}">${m}</option>`
+      ).join("")}
+    </select>
     <div class="lib-counter" id="lib-counter"></div>
     <div class="lib-list" id="lib-list"></div>
     <button class="add-block-btn lib-add" id="lib-add">+ Aggiungi esercizio custom</button>
@@ -43,8 +48,11 @@ async function openLibrary() {
     _libState.query = e.target.value;
     _renderLibList();
   };
+  document.getElementById("lib-muscle-sel").onchange = (e) => {
+    _libState.muscle = e.target.value;
+    _renderLibList();
+  };
   document.getElementById("lib-add").onclick = _openCustomForm;
-  _renderFilters();
 
   // carico custom in background (silent, no spinner)
   try {
@@ -54,26 +62,6 @@ async function openLibrary() {
     _libState.customExercises = [];
   }
   _renderLibList();
-}
-
-function _renderFilters() {
-  const wrap = document.getElementById("lib-filters");
-  const chips = ["", ...COMMON_MUSCLES];
-  wrap.innerHTML = chips
-    .map(
-      (m) =>
-        `<button class="lib-chip${_libState.muscle === m ? " active" : ""}" data-m="${m}">${
-          m || "tutti"
-        }</button>`
-    )
-    .join("");
-  wrap.querySelectorAll(".lib-chip").forEach((c) => {
-    c.onclick = () => {
-      _libState.muscle = c.dataset.m;
-      _renderFilters();
-      _renderLibList();
-    };
-  });
 }
 
 function _allExercises() {

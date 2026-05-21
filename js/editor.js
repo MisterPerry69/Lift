@@ -243,41 +243,71 @@ function _fmtRest(sec) {
 
 /* ---------- Picker esercizi ---------- */
 
+let _pickerMuscle = "";
+
 function openExPicker() {
   let picker = document.getElementById("ex-picker");
+  const PICKER_MUSCLES = [
+    "chest","back","shoulders","biceps","triceps",
+    "quadriceps","hamstrings","glutes","calves","abdominals","forearms",
+  ];
   if (!picker) {
     picker = document.createElement("div");
     picker.id = "ex-picker";
     picker.className = "ex-picker";
     picker.innerHTML = `
-      <input class="ex-search" id="ex-search" placeholder="Cerca esercizio…" />
+      <div class="ex-picker-head">
+        <input class="ex-search" id="ex-search" placeholder="Cerca esercizio…" />
+        <button class="icon-btn" id="ex-close" aria-label="Chiudi">×</button>
+      </div>
+      <select class="trend-picker" id="ex-muscle-sel">
+        <option value="">Tutti i muscoli</option>
+        ${PICKER_MUSCLES.map(
+          (m) => `<option value="${m}">${m}</option>`
+        ).join("")}
+      </select>
       <div class="ex-results" id="ex-results"></div>`;
     document.body.appendChild(picker);
     document
       .getElementById("ex-search")
-      .addEventListener("input", (e) => filterExercises(e.target.value));
+      .addEventListener("input", () => _filterPickerExercises());
+    document
+      .getElementById("ex-muscle-sel")
+      .addEventListener("change", (e) => {
+        _pickerMuscle = e.target.value;
+        _filterPickerExercises();
+      });
+    document.getElementById("ex-close").onclick = () =>
+      picker.classList.remove("open");
   }
   picker.classList.add("open");
   document.getElementById("ex-search").value = "";
-  filterExercises("");
-  setTimeout(() => document.getElementById("ex-search").focus(), 100);
+  document.getElementById("ex-muscle-sel").value = _pickerMuscle;
+  _filterPickerExercises();
 }
 
-function filterExercises(q) {
-  q = q.trim().toLowerCase();
-  const list = q
-    ? EXERCISE_DB.filter((e) => e.name.toLowerCase().includes(q)).slice(0, 60)
-    : EXERCISE_DB.slice(0, 60);
+function _filterPickerExercises() {
+  const q = (document.getElementById("ex-search").value || "")
+    .trim()
+    .toLowerCase();
+  const m = _pickerMuscle;
+  const filtered = EXERCISE_DB.filter((e) => {
+    if (m && e.m !== m) return false;
+    if (q && !e.name.toLowerCase().includes(q)) return false;
+    return true;
+  }).slice(0, 80);
   const res = document.getElementById("ex-results");
-  res.innerHTML = list
-    .map(
-      (e) => `
-    <div class="ex-item" data-ex="${e.id}">
-      <div class="ei-name">${escapeHtml(e.name)}</div>
-      <div class="ei-meta">${e.m} · ${e.eq}</div>
-    </div>`
-    )
-    .join("");
+  res.innerHTML = filtered.length
+    ? filtered
+        .map(
+          (e) => `
+      <div class="ex-item" data-ex="${e.id}">
+        <div class="ei-name">${escapeHtml(e.name)}</div>
+        <div class="ei-meta">${e.m} · ${e.eq}</div>
+      </div>`
+        )
+        .join("")
+    : `<div class="empty-state">Nessun esercizio</div>`;
   res.querySelectorAll(".ex-item").forEach((it) => {
     it.onclick = () => {
       const ex = EXERCISE_DB.find((x) => x.id === it.dataset.ex);
