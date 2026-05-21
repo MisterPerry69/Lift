@@ -74,8 +74,9 @@ async function _handleProfileItem(id) {
       return renderHome();
     case "peso":
       return openWeightModal();
-    case "esercizi":
     case "storico":
+      return openHistory();
+    case "esercizi":
     case "stats":
       return liftAlert("Sezione in arrivo.", "Coming soon");
   }

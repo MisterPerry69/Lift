@@ -1,0 +1,172 @@
+/* ============================================
+   LIFT — Storico + Dettaglio sessione
+   ============================================ */
+
+.history-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+.history-title {
+  font-size: var(--fs-title);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  flex: 1;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.history-item {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3) var(--sp-4);
+  text-align: left;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.history-item:active {
+  transform: scale(0.985);
+  background: var(--surface-2);
+}
+.hi-date {
+  text-align: center;
+  flex-shrink: 0;
+  width: 50px;
+}
+.hi-date .d-day {
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.hi-date .d-mon {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim-2);
+  font-weight: 700;
+  margin-top: 2px;
+}
+.hi-body {
+  flex: 1;
+  min-width: 0;
+}
+.hi-name {
+  font-weight: 700;
+  font-size: var(--fs-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hi-meta {
+  font-size: var(--fs-small);
+  color: var(--text-dim-2);
+  margin-top: 2px;
+}
+.hi-prs {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: var(--fs-small);
+  flex-shrink: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--sp-7) var(--sp-4);
+  color: var(--text-dim);
+}
+
+/* Dettaglio sessione */
+.sd-head {
+  margin-bottom: var(--sp-5);
+}
+.sd-date {
+  color: var(--text-dim);
+  font-size: var(--fs-small);
+}
+.sd-name {
+  font-size: var(--fs-title);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: var(--sp-1) 0 var(--sp-3);
+}
+.sd-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+.sd-stat {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+  text-align: center;
+}
+.sd-stat .v {
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.sd-stat .l {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim-2);
+  margin-top: 2px;
+}
+
+.sd-feedback {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+  margin: var(--sp-5) 0;
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.sd-section-label {
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+
+.sd-ex {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-2);
+}
+.sd-ex-name {
+  font-weight: 700;
+  font-size: var(--fs-body);
+}
+.sd-ex-sets {
+  margin-top: var(--sp-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.sd-set {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 2px var(--sp-3);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+}
+.sd-set.pr {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.sd-set.skip {
+  color: var(--text-dim-2);
+  text-decoration: line-through;
+}

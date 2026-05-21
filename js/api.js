@@ -50,21 +50,46 @@ function _hideLoading() {
 const LOADING_MSG = {
   lift_get_data: "Carico i tuoi dati…",
   lift_get_template: "Preparo la scheda…",
+  lift_get_session: "Carico la sessione…",
   lift_save_template: "Salvo la scheda…",
   lift_save_session: "Salvo la sessione…",
+  lift_log_weight: "Salvo il peso…",
   lift_generate_session_feedback: "Analisi in corso…",
   lift_suggest_starting_weight: "Calcolo un peso…",
 };
 
-async function apiGet(action, params = {}) {
+// Cache delle GET, key = "action?params". TTL semplice in ms.
+const _apiCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 min: l'app e mono-utente, niente race conditions
+
+function _cacheKey(action, params) {
+  return action + "?" + JSON.stringify(params || {});
+}
+
+/** Invalida una o piu chiavi della cache (chiamato dopo i POST mutanti) */
+function apiInvalidate(actionPrefix) {
+  for (const k of [..._apiCache.keys()]) {
+    if (!actionPrefix || k.startsWith(actionPrefix)) _apiCache.delete(k);
+  }
+}
+
+async function apiGet(action, params = {}, opts = {}) {
   if (USE_MOCK) return mockResponse(action, params);
-  _showLoading(LOADING_MSG[action]);
+  const key = _cacheKey(action, params);
+  const cached = _apiCache.get(key);
+  if (cached && Date.now() - cached.t < CACHE_TTL && !opts.fresh) {
+    return cached.data;
+  }
+  const showSpin = !opts.silent;
+  if (showSpin) _showLoading(LOADING_MSG[action]);
   try {
     const qs = new URLSearchParams({ action, ...params }).toString();
     const res = await fetch(`${GAS_URL}?${qs}`);
-    return await _parse(res);
+    const data = await _parse(res);
+    _apiCache.set(key, { t: Date.now(), data: data });
+    return data;
   } finally {
-    _hideLoading();
+    if (showSpin) _hideLoading();
   }
 }
 
@@ -78,11 +103,26 @@ async function apiPost(action, payload = {}) {
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ action, ...payload }),
     });
-    return await _parse(res);
+    const data = await _parse(res);
+    // Le POST che cambiano stato invalidano la cache di lettura
+    if (_INVALIDATES_BOOTSTRAP[action]) {
+      apiInvalidate("lift_get_data");
+    }
+    return data;
   } finally {
     _hideLoading();
   }
 }
+
+// Quali action invalidano la cache di lift_get_data
+const _INVALIDATES_BOOTSTRAP = {
+  lift_save_template: true,
+  lift_archive_template: true,
+  lift_save_session: true,
+  lift_log_weight: true,
+  lift_save_custom_exercise: true,
+  lift_edit_session: true,
+};
 
 function mockResponse(action) {
   return new Promise((resolve) => {
