@@ -29,7 +29,7 @@ function _profileHtml(p) {
     { id: "esercizi", icon: "library", label: "Esercizi", soon: true },
     { id: "peso", icon: "scale", label: "Aggiorna peso" },
     { id: "storico", icon: "history", label: "Storico allenamenti" },
-    { id: "stats", icon: "bar-chart", label: "Statistiche", soon: true },
+    { id: "stats", icon: "bar-chart", label: "Statistiche" },
     { id: "home", icon: "home", label: "Homepage" },
   ];
   return `
@@ -76,8 +76,9 @@ async function _handleProfileItem(id) {
       return openWeightModal();
     case "storico":
       return openHistory();
-    case "esercizi":
     case "stats":
+      return openStats();
+    case "esercizi":
       return liftAlert("Sezione in arrivo.", "Coming soon");
   }
 }
