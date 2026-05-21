@@ -68,10 +68,7 @@ async function _handleProfileItem(id) {
       showScreen("home");
       return renderHome();
     case "schede":
-      // Per ora: torna in home (le schede si gestiscono da li).
-      // Quando avremo una pagina "gestione schede" la apriremo qui.
-      showScreen("home");
-      return renderHome();
+      return openSchede();
     case "peso":
       return openWeightModal();
     case "storico":
