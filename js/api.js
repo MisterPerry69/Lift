@@ -56,6 +56,7 @@ const LOADING_MSG = {
   lift_log_weight: "Salvo il peso…",
   lift_get_stats: "Carico le statistiche…",
   lift_get_exercise_trend: "Carico il trend…",
+  lift_save_custom_exercise: "Salvo l'esercizio…",
   lift_generate_session_feedback: "Analisi in corso…",
   lift_suggest_starting_weight: "Calcolo un peso…",
 };

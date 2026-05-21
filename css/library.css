@@ -1,0 +1,179 @@
+/* ============================================
+   LIFT — Libreria esercizi
+   ============================================ */
+
+.lib-search {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-body);
+  outline: none;
+  margin-bottom: var(--sp-3);
+}
+.lib-search:focus {
+  border-color: var(--accent);
+}
+
+.lib-filters {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  padding-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.lib-chip {
+  flex-shrink: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  padding: 6px var(--sp-3);
+  text-transform: capitalize;
+}
+.lib-chip.active {
+  background: var(--accent-ghost);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lib-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.lib-item {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3) var(--sp-4);
+  text-align: left;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.lib-item:active {
+  background: var(--surface-2);
+}
+.lib-name {
+  flex: 1;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-meta {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim-2);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.lib-tag-custom {
+  background: var(--accent-ghost);
+  color: var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 2px var(--sp-2);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.lib-counter {
+  font-size: var(--fs-small);
+  color: var(--text-dim-2);
+  margin-bottom: var(--sp-3);
+}
+
+.lib-add {
+  margin-top: var(--sp-5);
+}
+
+/* Dettaglio esercizio */
+.exd-head {
+  margin-bottom: var(--sp-5);
+}
+.exd-name {
+  font-size: var(--fs-title);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--sp-2);
+}
+.exd-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+.exd-tag {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 2px var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  text-transform: capitalize;
+}
+
+.exd-section {
+  margin-top: var(--sp-5);
+}
+.exd-section h3 {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim-2);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+.exd-section p {
+  font-size: var(--fs-small);
+  line-height: 1.5;
+}
+.exd-section ol {
+  padding-left: 1.2em;
+  font-size: var(--fs-small);
+  line-height: 1.5;
+}
+.exd-section ol li {
+  margin-bottom: 4px;
+}
+
+/* Modale nuovo custom */
+.cust-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  text-align: left;
+  margin-top: var(--sp-3);
+}
+.cust-form label {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim-2);
+  font-weight: 700;
+}
+.cust-form input,
+.cust-form select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body);
+  font-family: inherit;
+  outline: none;
+}
+.cust-form input:focus,
+.cust-form select:focus {
+  border-color: var(--accent);
+}

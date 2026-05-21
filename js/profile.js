@@ -26,7 +26,7 @@ function _profileHtml(p) {
   const weight = p.weightKg ? p.weightKg + " kg" : "peso non registrato";
   const items = [
     { id: "schede", icon: "clipboard", label: "Schede allenamenti" },
-    { id: "esercizi", icon: "library", label: "Esercizi", soon: true },
+    { id: "esercizi", icon: "library", label: "Esercizi" },
     { id: "peso", icon: "scale", label: "Aggiorna peso" },
     { id: "storico", icon: "history", label: "Storico allenamenti" },
     { id: "stats", icon: "bar-chart", label: "Statistiche" },
@@ -79,7 +79,7 @@ async function _handleProfileItem(id) {
     case "stats":
       return openStats();
     case "esercizi":
-      return liftAlert("Sezione in arrivo.", "Coming soon");
+      return openLibrary();
   }
 }
 
