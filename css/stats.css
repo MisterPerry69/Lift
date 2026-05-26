@@ -1,12 +1,13 @@
 /* ============================================
-   LIFT — Statistiche (3 viste)
+   LIFT — Statistiche v2
    ============================================ */
 
+/* Tab switcher */
 .stats-tabs {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: var(--sp-1);
+  gap: 4px;
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-pill);
@@ -14,16 +15,19 @@
   margin-bottom: var(--sp-5);
 }
 .stats-tab {
-  padding: var(--sp-2) var(--sp-3);
-  font-size: var(--fs-small);
+  padding: 8px var(--sp-2);
+  font-size: var(--fs-micro);
   font-weight: 700;
-  color: var(--text-dim);
+  color: var(--text-dim-2);
   border-radius: var(--radius-pill);
   text-align: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background var(--t-fast), color var(--t-fast);
 }
 .stats-tab.active {
   background: var(--accent);
-  color: #07120c;
+  color: #061a0e;
 }
 
 .stats-view {
@@ -50,19 +54,12 @@
   height: 14px;
   border-radius: 3px;
   background: var(--surface-2);
+  transition: background var(--t-fast);
 }
-.hm-cell[data-level="1"] {
-  background: rgba(74, 222, 128, 0.25);
-}
-.hm-cell[data-level="2"] {
-  background: rgba(74, 222, 128, 0.5);
-}
-.hm-cell[data-level="3"] {
-  background: rgba(74, 222, 128, 0.75);
-}
-.hm-cell[data-level="4"] {
-  background: var(--accent);
-}
+.hm-cell[data-level="1"] { background: rgba(61, 224, 122, 0.18); }
+.hm-cell[data-level="2"] { background: rgba(61, 224, 122, 0.42); }
+.hm-cell[data-level="3"] { background: rgba(61, 224, 122, 0.68); }
+.hm-cell[data-level="4"] { background: var(--accent); }
 
 .heatmap-legend {
   display: flex;
@@ -70,14 +67,18 @@
   gap: var(--sp-2);
   font-size: var(--fs-micro);
   color: var(--text-dim-2);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  font-weight: 700;
   margin-top: var(--sp-3);
 }
 .heatmap-legend .hm-cell {
-  margin: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
 }
 
+/* Summary cards */
 .stats-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -88,30 +89,35 @@
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
-  padding: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2);
   text-align: center;
 }
 .stats-card .v {
   font-size: 1.3rem;
   font-weight: 800;
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+  display: block;
 }
 .stats-card .l {
   font-size: var(--fs-micro);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-dim-2);
-  margin-top: 2px;
+  margin-top: 4px;
+  display: block;
+  font-weight: 700;
 }
 
 /* PR list */
 .pr-group {
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-4);
 }
 .pr-group-name {
   font-weight: 700;
   margin-bottom: var(--sp-2);
-  font-size: var(--fs-body);
+  font-size: var(--fs-small);
+  letter-spacing: -0.01em;
 }
 .pr-row {
   display: flex;
@@ -125,7 +131,7 @@
 }
 .pr-row .pr-type {
   font-size: var(--fs-micro);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-dim-2);
   font-weight: 700;
@@ -134,13 +140,16 @@
 .pr-row .pr-val {
   font-weight: 800;
   color: var(--accent);
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
 }
 .pr-row .pr-date {
   font-size: var(--fs-small);
   color: var(--text-dim-2);
-  min-width: 60px;
+  min-width: 58px;
   text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
 }
 
 /* Trend */
@@ -150,12 +159,34 @@
   border: 1px solid var(--border);
   color: var(--text);
   font-family: inherit;
-  font-size: var(--fs-body);
+  font-size: var(--fs-small);
+  font-weight: 600;
   padding: var(--sp-3) var(--sp-4);
   border-radius: var(--radius-sm);
   margin-bottom: var(--sp-4);
   outline: none;
+  transition: border-color var(--t-fast);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23515c6e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--sp-4) center;
+  padding-right: var(--sp-7);
 }
+.trend-picker:focus {
+  border-color: var(--accent);
+}
+
+/* Weight tab summary variant */
+.stats-summary--top {
+  margin-top: 0;
+  margin-bottom: var(--sp-4);
+}
+.stats-empty-full {
+  grid-column: 1 / -1;
+  padding: var(--sp-5) 0;
+}
+
 .trend-chart-wrap {
   position: relative;
   height: 220px;

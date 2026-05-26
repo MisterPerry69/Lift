@@ -1,5 +1,5 @@
 /* ============================================
-   LIFT — Editor schede
+   LIFT — Editor schede v2
    ============================================ */
 
 .editor-head {
@@ -9,17 +9,6 @@
   margin-bottom: var(--sp-5);
 }
 
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-pill);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
 .editor-title-input {
   flex: 1;
   background: transparent;
@@ -27,21 +16,32 @@
   border-bottom: 2px solid var(--border);
   color: var(--text);
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   padding: var(--sp-2) 0;
   outline: none;
+  font-family: inherit;
+  transition: border-color var(--t-fast);
 }
-
 .editor-title-input:focus {
   border-color: var(--accent);
 }
+.editor-title-input::placeholder {
+  color: var(--text-dim-2);
+  font-weight: 600;
+}
 
+/* Block card */
 .block-card {
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
   padding: var(--sp-4);
   margin-bottom: var(--sp-3);
+  transition: border-color var(--t-fast);
+}
+.block-card:focus-within {
+  border-color: var(--border);
 }
 
 .block-card .bc-top {
@@ -55,12 +55,14 @@
 .bc-exname {
   font-weight: 700;
   font-size: var(--fs-body);
+  letter-spacing: -0.01em;
 }
-
 .bc-muscle {
   font-size: var(--fs-small);
   color: var(--text-dim-2);
   text-transform: capitalize;
+  margin-top: 2px;
+  font-weight: 500;
 }
 
 .bc-del {
@@ -72,45 +74,16 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.bc-del:active {
+  background: rgba(244, 85, 102, 0.22);
+  transform: scale(0.9);
 }
 
-.sets-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex-wrap: wrap;
-}
-
-.set-config {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  background: var(--surface-2);
-  border-radius: var(--radius-pill);
-  padding: var(--sp-1) var(--sp-3);
-  font-size: var(--fs-small);
-}
-
-.set-config input {
-  width: 38px;
-  background: transparent;
-  border: none;
-  color: var(--text);
-  text-align: center;
-  font-size: var(--fs-small);
-  outline: none;
-}
-
-.mini-select {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: var(--radius-pill);
-  padding: var(--sp-1) var(--sp-2);
-  font-size: var(--fs-micro);
-}
-
-/* Vista SIMPLE del blocco: NxR + REST + bottone CUSTOM */
+/* Simple NxR view */
 .simple-row {
   display: flex;
   align-items: center;
@@ -121,47 +94,53 @@
 .simple-row-rest {
   margin-bottom: var(--sp-3);
 }
+
 .simple-field {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   background: var(--surface-2);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius);
   padding: var(--sp-3) var(--sp-4);
+  transition: border-color var(--t-fast);
+}
+.simple-field:focus-within {
+  border-color: var(--accent);
 }
 .simple-field-rest {
   flex: 0 1 60%;
 }
+
 .simple-field input {
   width: 56px;
   background: transparent;
   border: none;
   color: var(--text);
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
   text-align: center;
   outline: none;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
-.simple-field input::-webkit-outer-spin-button,
-.simple-field input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
+
 .simple-lab {
   font-size: var(--fs-micro);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   font-weight: 700;
-  color: var(--text-dim);
+  color: var(--text-dim-2);
+  text-transform: uppercase;
 }
 .simple-x {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: var(--text-dim-2);
   font-weight: 700;
+  font-family: var(--font-mono);
 }
+
 .custom-btn {
   display: inline-flex;
   align-items: center;
@@ -169,13 +148,61 @@
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
-  padding: var(--sp-2) var(--sp-4);
+  padding: 6px var(--sp-4);
   font-size: var(--fs-micro);
   letter-spacing: 0.1em;
   font-weight: 700;
+  color: var(--text-dim-2);
+  text-transform: uppercase;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.custom-btn:active {
+  background: var(--surface-3);
+  border-color: var(--border);
   color: var(--text-dim);
 }
 
+/* Custom set rows */
+.sets-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.set-config {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-small);
+}
+.set-config input {
+  width: 38px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: center;
+  font-size: var(--fs-small);
+  font-family: var(--font-mono);
+  outline: none;
+}
+.set-rest {
+  width: 54px;
+}
+.mini-select {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: var(--radius-pill);
+  padding: 4px var(--sp-2);
+  font-size: var(--fs-micro);
+  font-family: inherit;
+  outline: none;
+}
+
+/* Bottom buttons */
 .add-block-btn,
 .save-template-btn {
   width: 100%;
@@ -187,21 +214,43 @@
   justify-content: center;
   gap: var(--sp-2);
   margin-top: var(--sp-3);
+  font-size: var(--fs-small);
+  letter-spacing: 0.02em;
+  transition: background var(--t-fast), transform var(--t-fast),
+    border-color var(--t-fast), color var(--t-fast);
 }
-
 .add-block-btn {
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px dashed var(--border);
-  color: var(--text-dim);
+  color: var(--text-dim-2);
 }
-
+.add-block-btn:active {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .save-template-btn {
   background: var(--accent);
-  color: #07120c;
+  color: #061a0e;
   margin-top: var(--sp-5);
+  box-shadow: 0 0 24px var(--accent-glow);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.save-template-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 0 10px var(--accent-glow);
 }
 
-/* Picker esercizi */
+/* Empty blocks message */
+.editor-empty {
+  color: var(--text-dim-2);
+  font-size: var(--fs-small);
+  padding: var(--sp-4) 0;
+  font-style: italic;
+}
+
+/* Exercise picker overlay */
 .ex-picker {
   position: fixed;
   inset: 0;
@@ -213,9 +262,9 @@
   max-width: 480px;
   margin: 0 auto;
 }
-
 .ex-picker.open {
   display: flex;
+  animation: screenIn var(--t-base) both;
 }
 
 .ex-picker-head {
@@ -231,37 +280,51 @@
 .ex-picker-head .icon-btn {
   width: 44px;
   height: 44px;
-  font-size: 1.4rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-dim);
 }
 
 .ex-search {
   width: 100%;
   background: var(--surface-2);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
   padding: var(--sp-3) var(--sp-4);
   font-size: var(--fs-body);
   outline: none;
   margin-bottom: var(--sp-3);
+  font-family: inherit;
+  transition: border-color var(--t-fast);
+}
+.ex-search:focus {
+  border-color: var(--accent);
+}
+.ex-search::placeholder {
+  color: var(--text-dim-2);
 }
 
 .ex-results {
   flex: 1;
   overflow-y: auto;
 }
-
 .ex-item {
   padding: var(--sp-3) var(--sp-2);
   border-bottom: 1px solid var(--border-soft);
+  transition: background var(--t-fast);
 }
-
+.ex-item:active {
+  background: var(--surface-2);
+}
 .ex-item .ei-name {
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
-
 .ex-item .ei-meta {
   font-size: var(--fs-small);
   color: var(--text-dim-2);
   text-transform: capitalize;
+  margin-top: 2px;
+  font-weight: 500;
 }

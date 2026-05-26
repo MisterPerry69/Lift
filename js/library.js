@@ -170,7 +170,7 @@ function _openExerciseDetail(ref) {
           </div>`
         : `<div class="exd-section">
             <h3>Istruzioni</h3>
-            <p style="color:var(--text-dim)">Non disponibili per questo esercizio.</p>
+            <p>Non disponibili per questo esercizio.</p>
           </div>`
     }
   `;
@@ -222,7 +222,7 @@ async function _openCustomForm() {
       document.body.appendChild(d);
     }
     d.innerHTML = `
-      <div class="dlg-box" style="max-width:380px">
+      <div class="dlg-box dlg-wide">
         <div class="dlg-title">Nuovo esercizio</div>
         <div class="cust-form">
           <div>
@@ -247,7 +247,7 @@ async function _openCustomForm() {
             <input id="cf-notes" type="text" placeholder="Es. stretch lungo, scapole basse" />
           </div>
         </div>
-        <div class="dlg-actions" style="margin-top:var(--sp-4)">
+        <div class="dlg-actions dlg-actions-top">
           <button class="dlg-btn dlg-btn-cancel" id="cf-cancel">Annulla</button>
           <button class="dlg-btn dlg-btn-ok" id="cf-save">Salva</button>
         </div>

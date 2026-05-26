@@ -96,10 +96,7 @@ function _finStep2Html() {
   return `
     <div class="fin-analyzing">
       <div class="fin-spin"></div>
-      <div style="text-align:center">
-        <div class="fin-title" style="font-size:1.5rem">Analisi in corso</div>
-        <div class="fin-sub" style="margin-bottom:0">Sto guardando come e andata…</div>
-      </div>
+      <div class="fin-analyzing-label">Analisi in corso…</div>
     </div>
   `;
 }
@@ -198,7 +195,7 @@ function _renderStep3() {
     ? `<div class="fin-feedback">${escapeHtml(fb).replace(/\n/g, "<br>")}</div>`
     : `<div class="fin-feedback empty">
         Feedback non disponibile al momento.
-        ${fbErr ? `<div style="margin-top:8px;color:var(--danger);font-size:.85em">${escapeHtml(fbErr)}</div>` : ""}
+        ${fbErr ? `<div class="fin-feedback-err">${escapeHtml(fbErr)}</div>` : ""}
         <div class="fin-feedback-retry" id="fin-retry-fb">Rigenera feedback</div>
        </div>`;
 

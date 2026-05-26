@@ -231,7 +231,7 @@ let _weightChart = null;
 function _renderWeight() {
   const v = document.getElementById("view-weight");
   v.innerHTML = `
-    <div id="weight-summary" class="stats-summary" style="margin-top:0;margin-bottom:var(--sp-4)"></div>
+    <div id="weight-summary" class="stats-summary stats-summary--top"></div>
     <div class="trend-chart-wrap">
       <canvas id="weight-canvas"></canvas>
     </div>
@@ -252,7 +252,7 @@ async function _drawWeightChart() {
   const sum = document.getElementById("weight-summary");
   if (log.length === 0) {
     if (sum)
-      sum.innerHTML = `<div class="empty-state" style="grid-column:1/-1">Nessuna registrazione peso ancora.</div>`;
+      sum.innerHTML = `<div class="empty-state stats-empty-full">Nessuna registrazione peso ancora.</div>`;
     return;
   }
   const current = log[log.length - 1].weight;

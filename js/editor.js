@@ -48,7 +48,7 @@ function renderBlocks() {
   const wrap = document.getElementById("ed-blocks");
   const blocks = editorState.structure.blocks;
   if (blocks.length === 0) {
-    wrap.innerHTML = `<p class="bc-muscle" style="padding:var(--sp-4) 0">Nessun esercizio. Aggiungine uno.</p>`;
+    wrap.innerHTML = `<p class="editor-empty">Nessun esercizio. Aggiungine uno.</p>`;
     return;
   }
   wrap.innerHTML = blocks
@@ -134,7 +134,7 @@ function _blockCustomHtml(b, i) {
           <span>Rest</span>
           <input type="text" inputmode="numeric" placeholder="—"
             value="${b.restAfterSetSec ? _fmtRest(b.restAfterSetSec) : ""}"
-            data-rest="${i}" class="set-rest" style="width:54px" />
+            data-rest="${i}" class="set-rest" />
         </div>
       </div>
       <button class="custom-btn" data-tosimple="${i}">← TORNA A SEMPLICE</button>

@@ -155,7 +155,7 @@ async function _openQuickBlockEdit(bi) {
       document.body.appendChild(d);
     }
     d.innerHTML = `
-      <div class="dlg-box" style="max-width:380px">
+      <div class="dlg-box dlg-wide">
         <div class="dlg-title">${escapeHtml(b.exerciseName)}</div>
         ${
           isCustom
@@ -184,7 +184,7 @@ async function _openQuickBlockEdit(bi) {
           </div>
         </div>`
         }
-        <div class="dlg-actions" style="margin-top:var(--sp-4)">
+        <div class="dlg-actions dlg-actions-top">
           <button class="dlg-btn dlg-btn-danger" id="qb-del">Rimuovi</button>
           <button class="dlg-btn dlg-btn-cancel" id="qb-cancel">Annulla</button>
           ${

@@ -1,7 +1,8 @@
 /* ============================================
-   LIFT — Storico + Dettaglio sessione
+   LIFT — Storico + Dettaglio sessione v2
    ============================================ */
 
+/* Shared header used across many screens */
 .history-head {
   display: flex;
   align-items: center;
@@ -11,15 +12,17 @@
 .history-title {
   font-size: var(--fs-title);
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   flex: 1;
 }
 
+/* History list */
 .history-list {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
 }
+
 .history-item {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -30,30 +33,38 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  transition: background var(--t-fast), transform var(--t-fast);
+  transition: background var(--t-fast), transform var(--t-fast), border-color var(--t-fast);
 }
 .history-item:active {
-  transform: scale(0.985);
+  transform: scale(0.982);
   background: var(--surface-2);
 }
+
 .hi-date {
   text-align: center;
   flex-shrink: 0;
-  width: 50px;
+  width: 48px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-1) 0;
 }
 .hi-date .d-day {
   font-size: 1.3rem;
   font-weight: 800;
+  font-family: var(--font-mono);
   line-height: 1;
+  display: block;
 }
 .hi-date .d-mon {
   font-size: var(--fs-micro);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-dim-2);
   font-weight: 700;
   margin-top: 2px;
+  display: block;
 }
+
 .hi-body {
   flex: 1;
   min-width: 0;
@@ -64,23 +75,21 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.01em;
 }
 .hi-meta {
   font-size: var(--fs-small);
   color: var(--text-dim-2);
-  margin-top: 2px;
-}
-.hi-prs {
-  color: var(--accent);
-  font-weight: 700;
-  font-size: var(--fs-small);
-  flex-shrink: 0;
+  margin-top: 3px;
+  font-weight: 500;
 }
 
-.empty-state {
-  text-align: center;
-  padding: var(--sp-7) var(--sp-4);
-  color: var(--text-dim);
+.hi-prs {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: var(--fs-small);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
 }
 
 /* Dettaglio sessione */
@@ -88,13 +97,15 @@
   margin-bottom: var(--sp-5);
 }
 .sd-date {
-  color: var(--text-dim);
+  color: var(--text-dim-2);
   font-size: var(--fs-small);
+  font-family: var(--font-mono);
+  letter-spacing: 0.03em;
 }
 .sd-name {
   font-size: var(--fs-title);
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.025em;
   margin: var(--sp-1) 0 var(--sp-3);
 }
 .sd-stats {
@@ -110,16 +121,20 @@
   text-align: center;
 }
 .sd-stat .v {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+  display: block;
 }
 .sd-stat .l {
   font-size: var(--fs-micro);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-dim-2);
-  margin-top: 2px;
+  margin-top: 4px;
+  display: block;
+  font-weight: 700;
 }
 
 .sd-feedback {
@@ -129,8 +144,21 @@
   padding: var(--sp-4);
   margin: var(--sp-5) 0;
   font-size: var(--fs-small);
-  line-height: 1.55;
-  color: var(--text);
+  line-height: 1.6;
+  color: var(--text-dim);
+  position: relative;
+}
+.sd-feedback::before {
+  content: "AI";
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-4);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  color: var(--accent);
+  opacity: 0.55;
+  font-family: var(--font-mono);
 }
 
 .sd-section-label {
@@ -147,6 +175,7 @@
 .sd-ex-name {
   font-weight: 700;
   font-size: var(--fs-body);
+  letter-spacing: -0.01em;
 }
 .sd-ex-sets {
   margin-top: var(--sp-2);
@@ -158,13 +187,15 @@
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
-  padding: 2px var(--sp-3);
+  padding: 3px var(--sp-3);
   font-size: var(--fs-small);
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-weight: 500;
 }
 .sd-set.pr {
   border-color: var(--accent);
   color: var(--accent);
+  background: var(--accent-ghost);
 }
 .sd-set.skip {
   color: var(--text-dim-2);

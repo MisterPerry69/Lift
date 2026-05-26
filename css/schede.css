@@ -1,5 +1,5 @@
 /* ============================================
-   LIFT — Schede allenamenti (lista + dettaglio)
+   LIFT — Schede allenamenti v2
    ============================================ */
 
 .schede-list {
@@ -7,6 +7,7 @@
   flex-direction: column;
   gap: var(--sp-2);
 }
+
 .sch-item {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -17,9 +18,11 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  transition: background var(--t-fast), transform var(--t-fast), border-color var(--t-fast);
 }
 .sch-item:active {
   background: var(--surface-2);
+  transform: scale(0.982);
 }
 .sch-item .sch-info {
   flex: 1;
@@ -31,39 +34,39 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 .sch-item .sch-meta {
   font-size: var(--fs-small);
   color: var(--text-dim-2);
-  margin-top: 2px;
+  margin-top: 3px;
+  font-weight: 500;
 }
 .sch-item .sch-arrow {
   color: var(--text-dim-2);
+  opacity: 0.45;
   flex-shrink: 0;
 }
 
 /* Dettaglio scheda */
-.sch-detail-head {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-3);
-}
 .sch-detail-name {
   flex: 1;
   font-size: var(--fs-title);
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .sch-detail-notes {
-  color: var(--text-dim);
+  color: var(--text-dim-2);
   font-size: var(--fs-small);
   margin-bottom: var(--sp-4);
+  line-height: 1.5;
+  font-style: italic;
 }
 
+/* Block row */
 .sch-block {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -73,6 +76,10 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  transition: border-color var(--t-fast);
+}
+.sch-block:hover {
+  border-color: var(--border);
 }
 .sch-block-main {
   flex: 1;
@@ -81,12 +88,16 @@
 .sch-block-name {
   font-weight: 700;
   font-size: var(--fs-body);
+  letter-spacing: -0.01em;
 }
 .sch-block-detail {
   font-size: var(--fs-small);
-  color: var(--text-dim);
-  margin-top: 2px;
+  color: var(--text-dim-2);
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-weight: 400;
 }
+
 .sch-block-edit {
   width: 36px;
   height: 36px;
@@ -96,12 +107,15 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  color: var(--text-dim);
+  color: var(--text-dim-2);
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
 }
 .sch-block-edit:active {
   background: var(--surface-3);
+  transform: scale(0.92);
 }
 .sch-block-edit svg {
   width: 18px;
   height: 18px;
+  stroke-width: 1.75;
 }

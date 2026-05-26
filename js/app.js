@@ -144,7 +144,7 @@ async function boot() {
     const streak = document.getElementById("home-streak");
     if (streak) {
       streak.innerHTML =
-        '<span style="color:var(--danger)">' +
+        '<span class="text-danger">' +
         (USE_MOCK
           ? "Errore mock: " + String(err.message || err)
           : "Backend non raggiungibile. Controlla che il deploy GAS sia su 'Chiunque' e che l'URL in api.js sia corretto.") +

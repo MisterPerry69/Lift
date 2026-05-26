@@ -1,12 +1,14 @@
 /* ============================================
-   LIFT — Profilo (menu globale)
+   LIFT — Profilo (menu globale) v2
    ============================================ */
 
 .prof-head {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-4);
   margin-bottom: var(--sp-6);
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .prof-avatar {
@@ -14,15 +16,17 @@
   height: 64px;
   border-radius: var(--radius-pill);
   background: var(--surface-2);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 0 0 3px var(--accent-ghost);
 }
 .prof-avatar svg {
   width: 28px;
   height: 28px;
-  color: var(--text-dim);
+  color: var(--text-dim-2);
 }
 .prof-avatar img {
   width: 100%;
@@ -31,18 +35,25 @@
   border-radius: var(--radius-pill);
 }
 
+.prof-head > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
 .prof-name {
   font-size: var(--fs-title);
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .prof-meta {
   font-size: var(--fs-small);
-  color: var(--text-dim);
-  margin-top: 2px;
+  color: var(--text-dim-2);
+  margin-top: 4px;
+  font-weight: 500;
 }
 
+/* Menu voci */
 .prof-menu {
   display: flex;
   flex-direction: column;
@@ -59,42 +70,55 @@
   padding: var(--sp-4);
   text-align: left;
   width: 100%;
-  transition: background var(--t-fast), transform var(--t-fast);
+  transition: background var(--t-fast), transform var(--t-fast), border-color var(--t-fast);
 }
 .prof-item:active {
-  transform: scale(0.985);
+  transform: scale(0.982);
   background: var(--surface-2);
+  border-color: var(--border);
 }
+
 .prof-item .pi-icon {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-pill);
   background: var(--accent-ghost);
   color: var(--accent);
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  transition: background var(--t-fast);
+}
+.prof-item:active .pi-icon {
+  background: rgba(61, 224, 122, 0.2);
 }
 .prof-item .pi-icon svg {
   width: 20px;
   height: 20px;
+  stroke-width: 1.75;
 }
 .prof-item .pi-text {
   flex: 1;
   font-weight: 600;
+  font-size: var(--fs-body);
+  letter-spacing: -0.005em;
 }
 .prof-item .pi-soon {
   font-size: var(--fs-micro);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-dim-2);
   font-weight: 700;
+  background: var(--surface-3);
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
 }
 .prof-item .pi-arrow {
   color: var(--text-dim-2);
+  opacity: 0.45;
 }
 
-/* Modale peso corporeo */
+/* Modale peso */
 .weight-modal-content {
   text-align: center;
 }
@@ -106,19 +130,22 @@
   margin: var(--sp-5) 0;
 }
 .weight-display input {
-  width: 130px;
+  width: 140px;
   background: transparent;
   border: none;
   border-bottom: 2px solid var(--accent);
   color: var(--text);
-  font-size: 2.4rem;
+  font-size: 2.6rem;
   font-weight: 800;
+  font-family: var(--font-mono);
   text-align: center;
   outline: none;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  padding-bottom: var(--sp-1);
 }
 .weight-display .wd-unit {
-  font-size: 1.2rem;
-  color: var(--text-dim);
+  font-size: 1.3rem;
+  color: var(--text-dim-2);
   font-weight: 700;
+  font-family: var(--font-mono);
 }

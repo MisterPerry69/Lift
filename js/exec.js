@@ -229,9 +229,10 @@ function openNum(kind, current) {
     m.className = "num-modal";
     m.innerHTML = `
       <div class="num-sheet">
+        <div class="num-sheet-label" id="num-label">Peso (kg)</div>
         <div class="num-display">
           <button class="num-step" id="num-minus">−</button>
-          <input id="num-input" readonly />
+          <input id="num-input" readonly inputmode="decimal" />
           <button class="num-step" id="num-plus">+</button>
         </div>
         <div class="num-chips" id="num-chips"></div>
@@ -242,6 +243,8 @@ function openNum(kind, current) {
       if (e.target === m) m.classList.remove("open");
     });
   }
+  const label = m.querySelector("#num-label");
+  if (label) label.textContent = kind === "weight" ? "Peso (kg)" : "Ripetizioni";
   const input = m.querySelector("#num-input");
   input.value = current || "";
   const chips =
@@ -379,8 +382,20 @@ function openRest(sec) {
     o = document.createElement("div");
     o.id = "rest-ov";
     o.className = "rest-overlay";
+    // SVG ring: circumference = 2π * 98 ≈ 615.75
     o.innerHTML = `
-      <div class="rest-circle" id="rest-num">0:00</div>
+      <div class="rest-label">Riposo</div>
+      <div class="rest-circle-wrap">
+        <svg class="rest-ring-svg" viewBox="0 0 220 220">
+          <circle class="rest-ring-bg" cx="110" cy="110" r="98"/>
+          <circle class="rest-ring-fill" id="rest-ring" cx="110" cy="110" r="98"
+            stroke-dasharray="615.75" stroke-dashoffset="0"/>
+        </svg>
+        <div class="rest-circle-inner">
+          <div class="rest-time" id="rest-num">0:00</div>
+          <div class="rest-next-hint">prossima serie</div>
+        </div>
+      </div>
       <div class="rest-actions">
         <button class="rest-btn" id="rest-minus">−15s</button>
         <button class="rest-btn rest-skip" id="rest-skip">SALTA</button>
@@ -398,12 +413,15 @@ function openRest(sec) {
     o.querySelector("#rest-skip").onclick = closeRest;
   }
   o.classList.add("open");
+  const totalSec = sec;
   clearInterval(restTick);
   const upd = () => {
     const left = Math.round((ex.restEndsAt - Date.now()) / 1000);
     const el = document.getElementById("rest-num");
+    const ring = document.getElementById("rest-ring");
     if (left <= 0) {
       if (el) el.textContent = "0:00";
+      if (ring) ring.style.strokeDashoffset = "615.75";
       beep();
       closeRest();
       return;
@@ -411,6 +429,10 @@ function openRest(sec) {
     if (el)
       el.textContent =
         Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0");
+    if (ring) {
+      const progress = Math.max(0, Math.min(1, left / totalSec));
+      ring.style.strokeDashoffset = String(615.75 * (1 - progress));
+    }
   };
   upd();
   restTick = setInterval(upd, 250);
