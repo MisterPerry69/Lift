@@ -1,34 +1,45 @@
-/* ============================================
-   LIFT — Home v2
+﻿/* ============================================
+   LIFT â€” Home v2
    ============================================ */
 
 .home-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--sp-4);
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-4);
 }
 
 .home-greeting {
   font-size: var(--fs-display);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 
+/* Streak â€” sotto week bar, ha importanza visiva */
 .home-streak {
-  margin-top: var(--sp-2);
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--sp-2);
   font-size: var(--fs-small);
   color: var(--text-dim-2);
-  font-weight: 600;
+  font-weight: 500;
+  margin-bottom: var(--sp-4);
+  min-height: 24px;
 }
-.home-streak strong {
+.home-streak.has-streak {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  padding: 6px var(--sp-4);
+  align-self: flex-start;
+  font-size: var(--fs-body);
+  color: var(--text);
+}
+.home-streak.has-streak strong {
   color: var(--accent);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* Avatar */
@@ -87,7 +98,7 @@
   font-size: 1rem;
   font-weight: 800;
   color: var(--text);
-  font-family: var(--font-mono);
+  font-family: var(--font);
   display: block;
   margin-top: 2px;
 }
@@ -224,19 +235,38 @@
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
-  padding: var(--sp-4);
+  padding: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
+  align-items: stretch;
+  gap: 0;
   transition: background var(--t-fast), transform var(--t-fast), border-color var(--t-fast);
   width: 100%;
   text-align: left;
+  overflow: hidden;
+  min-height: 80px;
 }
 .template-card:active {
   transform: scale(0.982);
   background: var(--surface-2);
   border-color: var(--border);
+}
+
+.tc-illus {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  padding: var(--sp-2);
+}
+
+.tc-body {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .template-card .tc-name {
@@ -256,6 +286,8 @@
   color: var(--text-dim-2);
   flex-shrink: 0;
   opacity: 0.5;
+  align-self: center;
+  padding-right: var(--sp-3);
 }
 
 /* Add button */

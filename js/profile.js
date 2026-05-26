@@ -23,7 +23,7 @@ function _profileHtml(p) {
   const last = p.lastSessionDate
     ? "ultima sessione " + _fmtShortDate(p.lastSessionDate)
     : "nessuna sessione ancora";
-  const weight = p.weightKg ? p.weightKg + " kg" : "peso non registrato";
+  const weightTxt = p.weightKg ? p.weightKg + " kg" : "—";
   const items = [
     { id: "schede", icon: "clipboard", label: "Schede allenamenti" },
     { id: "esercizi", icon: "library", label: "Esercizi" },
@@ -35,9 +35,12 @@ function _profileHtml(p) {
   return `
     <div class="prof-head">
       <div class="prof-avatar">${renderAvatar(p, "profile")}</div>
-      <div>
-        <div class="prof-name">${escapeHtml(p.name || "Ale")}</div>
-        <div class="prof-meta">${escapeHtml(weight)} · ${escapeHtml(last)}</div>
+      <div class="prof-head-info">
+        <div class="prof-name-row">
+          <div class="prof-name">${escapeHtml(p.name || "Ale")}</div>
+          <div class="prof-weight">${escapeHtml(weightTxt)}</div>
+        </div>
+        <div class="prof-last">${escapeHtml(last)}</div>
       </div>
     </div>
     <div class="prof-menu">
@@ -83,7 +86,7 @@ async function _handleProfileItem(id) {
 /* ---------- Modale aggiorna peso ---------- */
 
 async function openWeightModal() {
-  const currentWeightTxt = document.querySelector(".prof-meta")?.textContent || "";
+  const currentWeightTxt = document.querySelector(".prof-weight")?.textContent || "";
   const m = parseFloat(currentWeightTxt);
   const current = isFinite(m) ? m : "";
 

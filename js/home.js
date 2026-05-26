@@ -70,14 +70,20 @@ async function renderHome() {
 
   renderWeekBar(data.recentSessions || []);
 
-  // Saluto + streak
+  // Saluto
   document.getElementById("home-greeting").textContent = randomGreeting(
     profile.name
   );
+
+  // Streak: sotto il week-bar
   const streakEl = document.getElementById("home-streak");
-  streakEl.innerHTML = streakWeeks
-    ? `<strong>${streakWeeks}</strong> settimane di fila`
-    : "Nessuna streak attiva";
+  if (streakWeeks) {
+    streakEl.innerHTML = `🔥 <strong>${streakWeeks}</strong> ${streakWeeks === 1 ? "settimana" : "settimane"} di fila`;
+    streakEl.classList.add("has-streak");
+  } else {
+    streakEl.innerHTML = `Nessuna streak attiva`;
+    streakEl.classList.remove("has-streak");
+  }
 
   // Avatar -> apre il profilo (menu globale)
   const avatarBtn = document.getElementById("avatar-btn");
@@ -128,12 +134,12 @@ async function renderHome() {
   list.innerHTML = others
     .map(
       (t) => `
-    <li class="template-card" data-template="${t.id}">
-      <div>
-        <div class="tc-name">${t.name}</div>
-        <div class="tc-meta">${t.exerciseCount} esercizi · ${daysSinceLabel(
-        t.daysSince
-      )}</div>
+    <li class="template-card" data-template="${escapeAttr(t.id)}">
+      <img class="tc-illus" src="assets/illus-${escapeAttr(t.id)}.svg" alt=""
+           aria-hidden="true" onerror="this.src='assets/illus-hero.svg'" />
+      <div class="tc-body">
+        <div class="tc-name">${escapeHtml(t.name)}</div>
+        <div class="tc-meta">${t.exerciseCount} esercizi · ${daysSinceLabel(t.daysSince)}</div>
       </div>
       <span class="tc-arrow">${iconSvg("chevron-right")}</span>
     </li>`

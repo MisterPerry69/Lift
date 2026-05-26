@@ -1,5 +1,5 @@
-/* ============================================
-   LIFT — Base / reset v2
+﻿/* ============================================
+   LIFT â€” Base / reset v2
    ============================================ */
 
 *,
@@ -165,7 +165,7 @@ ul {
 #global-loader .gl-msg {
   font-size: var(--fs-small);
   color: var(--text-dim);
-  font-family: var(--font-mono);
+  font-family: var(--font);
   letter-spacing: 0.04em;
 }
 

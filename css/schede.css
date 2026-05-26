@@ -1,5 +1,5 @@
-/* ============================================
-   LIFT — Schede allenamenti v2
+﻿/* ============================================
+   LIFT â€” Schede allenamenti v2
    ============================================ */
 
 .schede-list {
@@ -12,21 +12,37 @@
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
-  padding: var(--sp-4);
+  padding: 0;
   text-align: left;
   width: 100%;
   display: flex;
-  align-items: center;
-  gap: var(--sp-3);
+  align-items: stretch;
+  gap: 0;
   transition: background var(--t-fast), transform var(--t-fast), border-color var(--t-fast);
+  overflow: hidden;
+  min-height: 80px;
 }
 .sch-item:active {
   background: var(--surface-2);
   transform: scale(0.982);
 }
+
+.sch-illus {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  padding: var(--sp-2);
+}
+
 .sch-item .sch-info {
   flex: 1;
   min-width: 0;
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .sch-item .sch-name {
   font-weight: 700;
@@ -46,6 +62,8 @@
   color: var(--text-dim-2);
   opacity: 0.45;
   flex-shrink: 0;
+  align-self: center;
+  padding-right: var(--sp-3);
 }
 
 /* Dettaglio scheda */
@@ -94,7 +112,7 @@
   font-size: var(--fs-small);
   color: var(--text-dim-2);
   margin-top: 3px;
-  font-family: var(--font-mono);
+  font-family: var(--font);
   font-weight: 400;
 }
 

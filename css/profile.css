@@ -1,5 +1,5 @@
-/* ============================================
-   LIFT — Profilo (menu globale) v2
+﻿/* ============================================
+   LIFT â€” Profilo (menu globale) v2
    ============================================ */
 
 .prof-head {
@@ -35,18 +35,36 @@
   border-radius: var(--radius-pill);
 }
 
-.prof-head > div:last-child {
+.prof-head-info {
   flex: 1;
   min-width: 0;
+}
+
+.prof-name-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
 }
 
 .prof-name {
   font-size: var(--fs-title);
   font-weight: 800;
   letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.prof-meta {
+.prof-weight {
+  font-size: var(--fs-title);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.prof-last {
   font-size: var(--fs-small);
   color: var(--text-dim-2);
   margin-top: 4px;
@@ -90,7 +108,7 @@
   transition: background var(--t-fast);
 }
 .prof-item:active .pi-icon {
-  background: rgba(61, 224, 122, 0.2);
+  background: var(--accent-ghost);
 }
 .prof-item .pi-icon svg {
   width: 20px;
@@ -137,7 +155,7 @@
   color: var(--text);
   font-size: 2.6rem;
   font-weight: 800;
-  font-family: var(--font-mono);
+  font-family: var(--font);
   text-align: center;
   outline: none;
   letter-spacing: -0.03em;
@@ -147,5 +165,5 @@
   font-size: 1.3rem;
   color: var(--text-dim-2);
   font-weight: 700;
-  font-family: var(--font-mono);
+  font-family: var(--font);
 }

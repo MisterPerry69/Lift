@@ -1,5 +1,5 @@
-/* ============================================
-   LIFT — Fine sessione (3 step) v2
+﻿/* ============================================
+   LIFT â€” Fine sessione (3 step) v2
    ============================================ */
 
 #screen-finish {
@@ -31,7 +31,7 @@
   font-weight: 500;
 }
 
-/* Mood / Energia — 5 chips */
+/* Mood / Energia â€” 5 chips */
 .fin-block {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -156,7 +156,7 @@
 .fin-analyzing-label {
   font-size: var(--fs-small);
   color: var(--text-dim-2);
-  font-family: var(--font-mono);
+  font-family: var(--font);
   letter-spacing: 0.06em;
 }
 
@@ -177,7 +177,7 @@
 .fin-stat .fs-val {
   font-size: 1.35rem;
   font-weight: 800;
-  font-family: var(--font-mono);
+  font-family: var(--font);
   letter-spacing: -0.02em;
   display: block;
 }
@@ -229,7 +229,7 @@
 .fin-pr .fpr-val {
   font-weight: 800;
   color: var(--accent);
-  font-family: var(--font-mono);
+  font-family: var(--font);
   letter-spacing: -0.01em;
 }
 .fin-pr .fpr-type {
@@ -263,7 +263,7 @@
   font-weight: 800;
   color: var(--accent);
   opacity: 0.6;
-  font-family: var(--font-mono);
+  font-family: var(--font);
 }
 .fin-feedback.empty {
   color: var(--text-dim-2);

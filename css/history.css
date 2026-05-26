@@ -1,5 +1,5 @@
-/* ============================================
-   LIFT — Storico + Dettaglio sessione v2
+﻿/* ============================================
+   LIFT â€” Storico + Dettaglio sessione v2
    ============================================ */
 
 /* Shared header used across many screens */
@@ -51,7 +51,7 @@
 .hi-date .d-day {
   font-size: 1.3rem;
   font-weight: 800;
-  font-family: var(--font-mono);
+  font-family: var(--font);
   line-height: 1;
   display: block;
 }
@@ -89,7 +89,7 @@
   font-weight: 800;
   font-size: var(--fs-small);
   flex-shrink: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font);
 }
 
 /* Dettaglio sessione */
@@ -99,7 +99,7 @@
 .sd-date {
   color: var(--text-dim-2);
   font-size: var(--fs-small);
-  font-family: var(--font-mono);
+  font-family: var(--font);
   letter-spacing: 0.03em;
 }
 .sd-name {
@@ -123,7 +123,7 @@
 .sd-stat .v {
   font-size: 1.15rem;
   font-weight: 800;
-  font-family: var(--font-mono);
+  font-family: var(--font);
   letter-spacing: -0.02em;
   display: block;
 }
@@ -158,7 +158,7 @@
   font-weight: 800;
   color: var(--accent);
   opacity: 0.55;
-  font-family: var(--font-mono);
+  font-family: var(--font);
 }
 
 .sd-section-label {
@@ -189,7 +189,7 @@
   border-radius: var(--radius-pill);
   padding: 3px var(--sp-3);
   font-size: var(--fs-small);
-  font-family: var(--font-mono);
+  font-family: var(--font);
   font-weight: 500;
 }
 .sd-set.pr {

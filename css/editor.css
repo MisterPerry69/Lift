@@ -1,5 +1,5 @@
-/* ============================================
-   LIFT — Editor schede v2
+﻿/* ============================================
+   LIFT â€” Editor schede v2
    ============================================ */
 
 .editor-head {
@@ -121,7 +121,7 @@
   color: var(--text);
   font-size: 1.3rem;
   font-weight: 800;
-  font-family: var(--font-mono);
+  font-family: var(--font);
   text-align: center;
   outline: none;
   letter-spacing: -0.02em;
@@ -138,7 +138,7 @@
   font-size: 1.1rem;
   color: var(--text-dim-2);
   font-weight: 700;
-  font-family: var(--font-mono);
+  font-family: var(--font);
 }
 
 .custom-btn {
@@ -185,7 +185,7 @@
   color: var(--text);
   text-align: center;
   font-size: var(--fs-small);
-  font-family: var(--font-mono);
+  font-family: var(--font);
   outline: none;
 }
 .set-rest {
