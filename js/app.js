@@ -5,13 +5,40 @@
 const screens = {};
 
 /* ============================================
+   Splash screen con progress bar simulata.
+   Avanza rapidamente fino a ~85%, poi aspetta
+   il boot reale e completa al 100% prima di sparire.
+   ============================================ */
+let _splashProgress = 0;
+let _splashTick = null;
+
+function splashStart() {
+  const bar = document.getElementById("splash-bar");
+  if (!bar) return;
+  _splashProgress = 0;
+  _splashTick = setInterval(() => {
+    // avanza veloce fino a 85, poi rallenta
+    const step = _splashProgress < 60 ? 8 : _splashProgress < 85 ? 2 : 0.3;
+    _splashProgress = Math.min(85, _splashProgress + step);
+    bar.style.width = _splashProgress + "%";
+  }, 80);
+}
+
+function splashFinish() {
+  clearInterval(_splashTick);
+  const bar = document.getElementById("splash-bar");
+  const splash = document.getElementById("splash");
+  if (bar) bar.style.width = "100%";
+  setTimeout(() => {
+    if (splash) splash.classList.add("hidden");
+  }, 380);
+}
+
+/* ============================================
    Avatar personalizzato.
-   - Carica un'immagine se l'utente la mette in assets/avatar.png (o .jpg).
-   - Se 404, fallback all'icona user di Lucide.
-   - Si controlla 1 volta a session (cache in memoria).
    ============================================ */
 const AVATAR_CANDIDATES = ["assets/avatar.png", "assets/avatar.jpg"];
-let _avatarUrl = null; // null = non ancora controllato, "" = nessuno, "..." = url valido
+let _avatarUrl = null;
 let _avatarChecked = false;
 
 function _probeAvatar() {
@@ -22,7 +49,6 @@ function _probeAvatar() {
     img.onload = () => {
       if (!_avatarUrl) {
         _avatarUrl = path;
-        // ridisegno gli avatar gia in DOM
         document.querySelectorAll("[data-avatar]").forEach((el) => {
           el.outerHTML = `<img src="${path}" alt="Profilo" data-avatar>`;
         });
@@ -34,15 +60,13 @@ function _probeAvatar() {
 
 function renderAvatar(profile, _ctx) {
   _probeAvatar();
-  // priorita: avatarUrl dal backend > file locale rilevato > fallback icona
   const url = (profile && profile.avatarUrl) || _avatarUrl;
   if (url) return `<img src="${url}" alt="Profilo" data-avatar>`;
-  // marco l'svg per poterlo sostituire al volo quando il probe completa
   const svg = iconSvg("user");
   return svg.replace("<svg", '<svg data-avatar');
 }
 
-/* ---- Modali custom (sostituiscono confirm/alert nativi) ---- */
+/* ---- Modali custom ---- */
 function liftDialog(opts) {
   return new Promise((resolve) => {
     let d = document.getElementById("lift-dlg");
@@ -115,6 +139,8 @@ function showScreen(id) {
 }
 
 async function boot() {
+  splashStart();
+
   screens.home = document.getElementById("screen-home");
   screens.editor = document.getElementById("screen-editor");
   screens.exec = document.getElementById("screen-exec");
@@ -130,6 +156,7 @@ async function boot() {
 
   // se c'e una sessione attiva non terminata, riprendila
   if (typeof resumeSessionIfAny === "function" && resumeSessionIfAny()) {
+    splashFinish();
     return;
   }
 
@@ -139,8 +166,7 @@ async function boot() {
     await renderHome();
   } catch (err) {
     console.error("Errore boot:", err);
-    document.getElementById("home-greeting").textContent =
-      "Connessione fallita";
+    document.getElementById("home-greeting").textContent = "Connessione fallita";
     const streak = document.getElementById("home-streak");
     if (streak) {
       streak.innerHTML =
@@ -150,6 +176,8 @@ async function boot() {
           : "Backend non raggiungibile. Controlla che il deploy GAS sia su 'Chiunque' e che l'URL in api.js sia corretto.") +
         "</span>";
     }
+  } finally {
+    splashFinish();
   }
 }
 

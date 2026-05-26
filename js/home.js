@@ -16,16 +16,19 @@ function randomGreeting(name) {
   return g.replace("{name}", name);
 }
 
-const DAY_NAMES = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+const DAY_NAMES = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 
 function renderWeekBar(sessions) {
   const wb = document.getElementById("week-bar");
   if (!wb) return;
-  // settimana = da domenica (indice 0) come nei mockup
+  // settimana = da lunedì (ISO week)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const start = new Date(today);
-  start.setDate(today.getDate() - today.getDay()); // domenica
+  // getDay(): 0=dom,1=lun,...,6=sab → offset da lunedì
+  const dayOfWeek = today.getDay(); // 0=sun
+  const offsetToMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  start.setDate(today.getDate() - offsetToMon); // lunedì
   const sessionDates = new Set(
     sessions
       .map((s) => {
@@ -106,14 +109,14 @@ async function renderHome() {
 
   hero.innerHTML = `
     <div class="hero-kicker">Oggi tocca</div>
-    <div class="hero-name">${suggested.name}</div>
+    <div class="hero-name">${escapeHtml(suggested.name)}</div>
     <div class="hero-meta">${suggested.exerciseCount} esercizi · ultima volta ${daysSinceLabel(
       suggested.daysSince
     )}</div>
-    <div class="hero-illustration">${iconSvg("dumbbell")}</div>
-    <button class="hero-start" data-template="${suggested.id}">
+    <button class="hero-start" data-template="${escapeAttr(suggested.id)}">
       ${iconSvg("play")} Inizia
     </button>
+    <img class="hero-illustration" src="assets/illus-hero.svg" alt="" aria-hidden="true" />
   `;
   hero
     .querySelector(".hero-start")

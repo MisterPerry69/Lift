@@ -161,14 +161,17 @@ function renderExec() {
         <div class="eh-name">${escapeHtml(ex.templateName)}</div>
         <div class="eh-timer" id="eh-timer">00:00:00</div>
       </div>
-      <button class="eh-end" id="ex-end">TERMINA</button>
+      <div class="exec-header-actions">
+        <button class="eh-discard" id="ex-discard" title="Scarta sessione">✕</button>
+        <button class="eh-end" id="ex-end">TERMINA</button>
+      </div>
     </div>
     <div class="exec-body">
       <div class="exec-progress">Esercizio ${ex.bi + 1} / ${
     ex.blocks.length
   }</div>
       <div class="exec-exname">${escapeHtml(exo.name)}</div>
-      <div class="exec-prev">${sugLabel}</div>
+      <div class="exec-prev">${escapeHtml(sugLabel)}</div>
       <div class="exec-set-nav">Serie ${ex.si + 1} / ${totSets} · obiettivo ${targetReps} reps</div>
       <div class="exec-controls">
         <button class="big-num" id="ex-weight">
@@ -191,6 +194,7 @@ function renderExec() {
 
   startSessionTimer();
   document.getElementById("ex-end").onclick = confirmEnd;
+  document.getElementById("ex-discard").onclick = confirmDiscard;
   document.getElementById("ex-weight").onclick = () =>
     openNum("weight", parseFloat(document.getElementById("exw").textContent) || 0);
   document.getElementById("ex-reps").onclick = () =>
@@ -470,6 +474,22 @@ async function confirmEnd() {
     { title: "Terminare la sessione?", okLabel: "Termina", danger: true }
   );
   if (ok) openFinish();
+}
+
+async function confirmDiscard() {
+  const ok = await liftConfirm(
+    "La sessione verra eliminata e non salvata. Sicuro?",
+    { title: "Scarta sessione?", okLabel: "Scarta", cancelLabel: "Annulla", danger: true }
+  );
+  if (!ok) return;
+  clearInterval(sessTick);
+  clearInterval(restTick);
+  releaseWakeLock();
+  localStorage.removeItem(LS_KEY);
+  ex = null;
+  apiInvalidate("lift_get_data");
+  showScreen("home");
+  renderHome();
 }
 
 function openFinish() {

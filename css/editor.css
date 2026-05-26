@@ -233,13 +233,13 @@
   background: var(--accent);
   color: #061a0e;
   margin-top: var(--sp-5);
-  box-shadow: 0 0 24px var(--accent-glow);
+  box-shadow: var(--shadow-soft);
   font-weight: 800;
   letter-spacing: 0.01em;
 }
 .save-template-btn:active {
   transform: scale(0.98);
-  box-shadow: 0 0 10px var(--accent-glow);
+  box-shadow: none;
 }
 
 /* Empty blocks message */
