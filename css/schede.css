@@ -9,18 +9,19 @@
 }
 
 .sch-item {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
-  padding: 0;
+  padding: var(--sp-4);
   text-align: left;
   width: 100%;
   display: flex;
-  align-items: stretch;
-  gap: 0;
+  align-items: center;
+  gap: var(--sp-2);
   transition: background var(--t-fast), transform var(--t-fast), border-color var(--t-fast);
   overflow: hidden;
-  min-height: 80px;
+  min-height: 72px;
 }
 .sch-item:active {
   background: var(--surface-2);
@@ -28,18 +29,19 @@
 }
 
 .sch-illus {
-  width: 80px;
-  height: 80px;
+  position: absolute;
+  right: var(--sp-3);
+  bottom: 0;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
-  flex-shrink: 0;
-  background: var(--surface-2);
-  padding: var(--sp-2);
+  pointer-events: none;
 }
 
 .sch-item .sch-info {
   flex: 1;
   min-width: 0;
-  padding: var(--sp-3);
+  max-width: calc(100% - 80px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -62,8 +64,7 @@
   color: var(--text-dim-2);
   opacity: 0.45;
   flex-shrink: 0;
-  align-self: center;
-  padding-right: var(--sp-3);
+  z-index: 1;
 }
 
 /* Dettaglio scheda */

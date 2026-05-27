@@ -122,7 +122,8 @@ async function renderHome() {
     <button class="hero-start" data-template="${escapeAttr(suggested.id)}">
       ${iconSvg("play")} Inizia
     </button>
-    <img class="hero-illustration" src="assets/illus-hero.svg" alt="" aria-hidden="true" />
+    <img class="hero-illustration" src="assets/illus-${escapeAttr(suggested.id)}.svg" alt=""
+         aria-hidden="true" onerror="this.src='assets/illus-hero.svg'" />
   `;
   hero
     .querySelector(".hero-start")
@@ -135,13 +136,13 @@ async function renderHome() {
     .map(
       (t) => `
     <li class="template-card" data-template="${escapeAttr(t.id)}">
-      <img class="tc-illus" src="assets/illus-${escapeAttr(t.id)}.svg" alt=""
-           aria-hidden="true" onerror="this.src='assets/illus-hero.svg'" />
       <div class="tc-body">
         <div class="tc-name">${escapeHtml(t.name)}</div>
         <div class="tc-meta">${t.exerciseCount} esercizi · ${daysSinceLabel(t.daysSince)}</div>
       </div>
       <span class="tc-arrow">${iconSvg("chevron-right")}</span>
+      <img class="tc-illus" src="assets/illus-${escapeAttr(t.id)}.svg" alt=""
+           aria-hidden="true" onerror="this.src='assets/illus-hero.svg'" />
     </li>`
     )
     .join("");

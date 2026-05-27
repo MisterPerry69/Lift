@@ -30,13 +30,13 @@ async function openSchede() {
       const days = t.daysSince >= 999 ? "mai eseguita" : daysSinceLabel(t.daysSince);
       return `
         <button class="sch-item" data-id="${escapeAttr(t.id)}">
-          <img class="sch-illus" src="assets/illus-${escapeAttr(t.id)}.svg" alt=""
-               aria-hidden="true" onerror="this.src='assets/illus-hero.svg'" />
           <div class="sch-info">
             <div class="sch-name">${escapeHtml(t.name)}</div>
             <div class="sch-meta">${t.exerciseCount} esercizi · ${days}</div>
           </div>
           <span class="sch-arrow">${iconSvg("chevron-right")}</span>
+          <img class="sch-illus" src="assets/illus-${escapeAttr(t.id)}.svg" alt=""
+               aria-hidden="true" onerror="this.src='assets/illus-hero.svg'" />
         </button>`;
     })
     .join("");
