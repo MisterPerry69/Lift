@@ -3,12 +3,16 @@
    ============================================ */
 
 const GREETINGS = [
-  "Ciao, {name}",
-  "Si torna in pista, {name}",
-  "Pronto, {name}?",
   "Bentornato, {name}",
-  "Che si pesta oggi, {name}?",
-  "Forza {name}, si lavora",
+  "Pronto a spingere, {name}?",
+  "Si parte, {name}",
+  "Andiamo, {name}",
+  "Ci siamo, {name}",
+  "Si riparte, {name}",
+  "Nuovo allenamento, {name}",
+  "Buona sessione, {name}",
+  "Daje, {name}!",
+  "Spacca tutto, {name}",
 ];
 
 function randomGreeting(name) {
