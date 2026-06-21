@@ -1,14 +1,33 @@
 {
-  "name": "lift",
-  "short_name": "lift",
-  "description": "Le tue recensioni di film, serie, giochi e fumetti",
+  "name": "ForgE",
+  "short_name": "ForgE",
+  "description": "Forgia i tuoi allenamenti.",
+  "lang": "it",
+  "dir": "ltr",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#3a3a3c",
-  "theme_color": "#3a3a3c",
   "orientation": "portrait",
+  "background_color": "#0c0e11",
+  "theme_color": "#0c0e11",
   "icons": [
-    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
