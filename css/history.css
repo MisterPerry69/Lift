@@ -10,9 +10,10 @@
   margin-bottom: var(--sp-5);
 }
 .history-title {
-  font-size: var(--fs-title);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   flex: 1;
 }
 
@@ -103,9 +104,10 @@
   letter-spacing: 0.03em;
 }
 .sd-name {
-  font-size: var(--fs-title);
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   margin: var(--sp-1) 0 var(--sp-3);
 }
 .sd-stats {

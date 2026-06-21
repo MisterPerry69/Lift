@@ -1,8 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" fill="none">
-  <rect width="72" height="72" rx="18" fill="#141720"/>
-  <rect x="10" y="32" width="8" height="8" rx="3" fill="#00C9A7"/>
-  <rect x="54" y="32" width="8" height="8" rx="3" fill="#00C9A7"/>
-  <rect x="18" y="34" width="36" height="4" rx="2" fill="#00C9A7"/>
-  <rect x="28" y="26" width="6" height="20" rx="3" fill="#00C9A7"/>
-  <rect x="38" y="26" width="6" height="20" rx="3" fill="#00C9A7"/>
+  <rect width="72" height="72" rx="18" fill="#13161b"/>
+  <!-- Diamante inciso -->
+  <path d="M36 8 L60 36 L36 64 L12 36 Z" stroke="#e8e9ec" stroke-width="1.4" opacity="0.5"/>
+  <path d="M36 13 L55 36 L36 59 L17 36 Z" stroke="#e8e9ec" stroke-width="1" opacity="0.28"/>
+  <!-- Incudine -->
+  <g fill="#e8e9ec">
+    <rect x="22" y="31" width="28" height="5" rx="1.2"/>
+    <path d="M20 31 q-3 0 -3 -3 l4 0 z"/>
+    <path d="M50 31 l4 -2 0 3 q0 2 -2 2 z"/>
+    <path d="M30 36 l12 0 -1.5 7 q-4 2 -9 0 z"/>
+    <rect x="32.5" y="43" width="7" height="3" rx="1"/>
+    <rect x="29" y="46" width="14" height="3" rx="1.4"/>
+  </g>
+  <!-- "F" blackletter sovraimpressa, accento rosso -->
+  <text x="36" y="44" text-anchor="middle" font-family="UnifrakturCook, serif"
+        font-size="22" font-weight="700" fill="#c1272d" opacity="0.92">F</text>
 </svg>
