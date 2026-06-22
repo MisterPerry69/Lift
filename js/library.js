@@ -6,20 +6,25 @@ let _libState = {
   query: "",
   muscle: "", // filtro muscolo attivo
   customExercises: [], // dal backend (caricati al primo apri)
+  catalog: [], // catalogo "exercises" curato in italiano
 };
 
+// Catalogo esercizi condiviso (popolato al boot); usato da libreria + picker editor.
+// var (non let) per tollerare l'ordine di caricamento degli script.
+var EXERCISES_CATALOG = [];
+
 const COMMON_MUSCLES = [
-  "chest",
-  "back",
-  "shoulders",
-  "biceps",
-  "triceps",
-  "quadriceps",
-  "hamstrings",
-  "glutes",
-  "calves",
-  "abdominals",
-  "forearms",
+  "Petto",
+  "Schiena",
+  "Spalle",
+  "Bicipiti",
+  "Tricipiti",
+  "Quadricipiti",
+  "Femorali",
+  "Glutei",
+  "Polpacci",
+  "Addome",
+  "Avambracci",
 ];
 
 async function openLibrary() {
@@ -58,6 +63,9 @@ async function openLibrary() {
   try {
     const boot = await apiGet("lift_get_data", {}, { silent: true });
     _libState.customExercises = (boot && boot.customExercises) || [];
+    _libState.catalog = (boot && boot.exercises) || [];
+    // catalogo condiviso anche con il picker dell'editor
+    EXERCISES_CATALOG = _libState.catalog;
   } catch (e) {
     _libState.customExercises = [];
   }
@@ -65,17 +73,15 @@ async function openLibrary() {
 }
 
 function _allExercises() {
-  // unione: public + custom con prefisso unificato
-  const pubExs = (typeof EXERCISE_DB !== "undefined" ? EXERCISE_DB : []).map(
-    (e) => ({
-      ref: "public:" + e.id,
-      name: e.name,
-      muscle: e.m || "",
-      equipment: e.eq || "",
-      category: e.cat || "",
-      isCustom: false,
-    })
-  );
+  // catalogo curato in italiano (foglio "exercises", ref "ex:<id>")
+  const catExs = (_libState.catalog || []).map((e) => ({
+    ref: "ex:" + e.id,
+    name: e.nome,
+    muscle: e.gruppo || "",
+    equipment: e.attrezzo || "",
+    category: "",
+    isCustom: false,
+  }));
   const customs = (_libState.customExercises || []).map((c) => ({
     ref: "custom:" + c.id,
     name: c.name,
@@ -85,7 +91,7 @@ function _allExercises() {
     isCustom: true,
   }));
   // i custom in cima
-  return customs.concat(pubExs);
+  return customs.concat(catExs);
 }
 
 function _renderLibList() {
@@ -195,18 +201,19 @@ function _findExerciseByRef(ref) {
         .filter(Boolean),
     };
   }
-  const e = (typeof EXERCISE_DB !== "undefined" ? EXERCISE_DB : []).find(
+  // catalogo curato (ref "ex:<id>")
+  const e = (_libState.catalog || EXERCISES_CATALOG || []).find(
     (x) => x.id === id
   );
   if (!e) return null;
   return {
     ref: ref,
-    name: e.name,
-    muscle: e.m,
-    equipment: e.eq,
-    category: e.cat,
+    name: e.nome,
+    muscle: e.gruppo || "",
+    equipment: e.attrezzo || "",
+    category: "",
     isCustom: false,
-    instructions: [],
+    instructions: e.noteDefault ? [e.noteDefault] : [],
   };
 }
 

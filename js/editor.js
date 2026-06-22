@@ -16,6 +16,8 @@ function openEditor(template) {
 
 function renderEditor() {
   const s = editorState;
+  // Il pannello import si mostra solo su scheda nuova e ancora vuota.
+  const showImport = !s.id && s.structure.blocks.length === 0;
   const root = document.getElementById("screen-editor");
   root.innerHTML = `
     <div class="editor-head">
@@ -26,6 +28,7 @@ function renderEditor() {
         s.name
       )}" />
     </div>
+    ${showImport ? _importPanelHtml() : ""}
     <div id="ed-blocks"></div>
     <button class="add-block-btn" id="ed-add">${iconSvg(
       "play"
@@ -42,6 +45,78 @@ function renderEditor() {
     (s.name = e.target.value);
   document.getElementById("ed-add").onclick = () => openExPicker();
   document.getElementById("ed-save").onclick = saveEditorTemplate;
+  if (showImport) _wireImportPanel();
+}
+
+/* ---------- Importer JSON ---------- */
+
+function _importPanelHtml() {
+  return `
+    <div class="import-panel" id="ed-import">
+      <div class="import-head">
+        <span class="import-title">${iconSvg("play")} Importa da JSON</span>
+        <button class="import-toggle" id="imp-toggle" type="button">Apri</button>
+      </div>
+      <div class="import-body" id="imp-body" hidden>
+        <p class="import-hint">Incolla il JSON di un <b>programma</b> (più workout, tutte le settimane). Gli esercizi non ancora nel catalogo verranno creati in automatico.</p>
+        <textarea class="import-textarea" id="imp-text" placeholder='{ "nome": "Brodesco 6 settimane", "dataInizio": "2026-06-22", "settimane": 6, "workout": [ ... ] }' spellcheck="false"></textarea>
+        <div class="import-error" id="imp-error" hidden></div>
+        <button class="import-btn" id="imp-do" type="button">Importa programma</button>
+      </div>
+    </div>`;
+}
+
+function _wireImportPanel() {
+  const toggle = document.getElementById("imp-toggle");
+  const body = document.getElementById("imp-body");
+  toggle.onclick = () => {
+    const open = body.hidden;
+    body.hidden = !open;
+    toggle.textContent = open ? "Chiudi" : "Apri";
+  };
+  document.getElementById("imp-do").onclick = _doImport;
+}
+
+async function _doImport() {
+  const txt = document.getElementById("imp-text").value;
+  const errBox = document.getElementById("imp-error");
+  const btn = document.getElementById("imp-do");
+  errBox.hidden = true;
+  errBox.textContent = "";
+
+  if (!txt.trim()) {
+    errBox.textContent = "Incolla prima il JSON del programma.";
+    errBox.hidden = false;
+    return;
+  }
+
+  let prog;
+  try {
+    prog = parseImportProgrammaJson(txt);
+  } catch (e) {
+    errBox.textContent = e.message || "JSON non valido.";
+    errBox.hidden = false;
+    return;
+  }
+
+  // Import programma: crea esercizi mancanti + salva il programma lato backend.
+  btn.textContent = "Importazione…";
+  btn.disabled = true;
+  try {
+    await apiPost("lift_import_programma", {
+      nome: prog.name,
+      dataInizio: prog.dataInizio,
+      weeks: prog.weeks,
+      workouts: prog.workouts,
+    });
+    showScreen("home");
+    await renderHome();
+  } catch (e) {
+    errBox.textContent = "Errore import: " + (e.message || e);
+    errBox.hidden = false;
+    btn.textContent = "Importa programma";
+    btn.disabled = false;
+  }
 }
 
 function renderBlocks() {
@@ -51,10 +126,69 @@ function renderBlocks() {
     wrap.innerHTML = `<p class="editor-empty">Nessun esercizio. Aggiungine uno.</p>`;
     return;
   }
+  const periodized = editorState.structure.weeks && blocks.some((b) => b.perWeek);
   wrap.innerHTML = blocks
-    .map((b, i) => (b.mode === "custom" ? _blockCustomHtml(b, i) : _blockSimpleHtml(b, i)))
+    .map((b, i) =>
+      b.perWeek
+        ? _blockPeriodizedHtml(b, i)
+        : b.mode === "custom"
+        ? _blockCustomHtml(b, i)
+        : _blockSimpleHtml(b, i)
+    )
     .join("");
-  _attachBlockHandlers(wrap);
+  if (periodized) {
+    _attachPeriodizedHandlers(wrap);
+  } else {
+    _attachBlockHandlers(wrap);
+  }
+}
+
+/* --- Vista blocco PERIODIZZATO (importato): riepilogo per-settimana, sola lettura per ora --- */
+function _fmtSet(s) {
+  const t =
+    s.type && s.type !== "work"
+      ? `<span class="ps-type ps-type-${s.type}">${s.type}</span>`
+      : "";
+  return `<span class="ps-set">${escapeHtml(String(s.reps))}${t}</span>`;
+}
+
+function _blockPeriodizedHtml(b, i) {
+  const cur = (editorState.structure.currentWeek || 1) - 1;
+  const ss = b.supersetGroup
+    ? `<span class="ps-ss">Superset ${escapeHtml(b.supersetGroup)}</span>`
+    : "";
+  const weeksHtml = (b.perWeek || [])
+    .map((wk, wi) => {
+      const sets = (wk.sets || []).map(_fmtSet).join(" ");
+      return `<div class="ps-week ${wi === cur ? "ps-week-cur" : ""}">
+        <span class="ps-week-lab">W${wi + 1}</span>
+        <span class="ps-week-sets">${sets}</span>
+      </div>`;
+    })
+    .join("");
+  return `
+    <div class="block-card block-periodized">
+      <div class="bc-top">
+        <div>
+          <div class="bc-exname">${escapeHtml(b.exerciseName)} ${ss}</div>
+          <div class="bc-muscle">${escapeHtml(b.muscle || "")}${
+    b.rest ? " · rest " + escapeHtml(b.rest) : ""
+  }</div>
+          ${b.note ? `<div class="ps-note">${escapeHtml(b.note)}</div>` : ""}
+        </div>
+        <button class="bc-del" data-del="${i}" aria-label="Rimuovi">×</button>
+      </div>
+      <div class="ps-weeks">${weeksHtml}</div>
+    </div>`;
+}
+
+function _attachPeriodizedHandlers(wrap) {
+  wrap.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.onclick = () => {
+      editorState.structure.blocks.splice(parseInt(btn.dataset.del, 10), 1);
+      renderEditor();
+    };
+  });
 }
 
 function _blockHeader(b, i) {
@@ -291,32 +425,35 @@ function _filterPickerExercises() {
     .trim()
     .toLowerCase();
   const m = _pickerMuscle;
-  const filtered = EXERCISE_DB.filter((e) => {
-    if (m && e.m !== m) return false;
-    if (q && !e.name.toLowerCase().includes(q)) return false;
-    return true;
-  }).slice(0, 80);
+  const catalog = typeof EXERCISES_CATALOG !== "undefined" ? EXERCISES_CATALOG : [];
+  const filtered = catalog
+    .filter((e) => {
+      if (m && e.gruppo !== m) return false;
+      if (q && !String(e.nome).toLowerCase().includes(q)) return false;
+      return true;
+    })
+    .slice(0, 80);
   const res = document.getElementById("ex-results");
   res.innerHTML = filtered.length
     ? filtered
         .map(
           (e) => `
-      <div class="ex-item" data-ex="${e.id}">
-        <div class="ei-name">${escapeHtml(e.name)}</div>
-        <div class="ei-meta">${e.m} · ${e.eq}</div>
+      <div class="ex-item" data-ex="${escapeAttr(e.id)}">
+        <div class="ei-name">${escapeHtml(e.nome)}</div>
+        <div class="ei-meta">${escapeHtml(e.gruppo || "")} · ${escapeHtml(e.attrezzo || "")}</div>
       </div>`
         )
         .join("")
-    : `<div class="empty-state">Nessun esercizio</div>`;
+    : `<div class="empty-state">Nessun esercizio nel catalogo</div>`;
   res.querySelectorAll(".ex-item").forEach((it) => {
     it.onclick = () => {
-      const ex = EXERCISE_DB.find((x) => x.id === it.dataset.ex);
+      const ex = catalog.find((x) => x.id === it.dataset.ex);
       editorState.structure.blocks.push({
         type: "single",
         mode: "simple",
-        exerciseRef: "public:" + ex.id,
-        exerciseName: ex.name,
-        muscle: ex.m,
+        exerciseRef: "ex:" + ex.id,
+        exerciseName: ex.nome,
+        muscle: ex.gruppo || "",
         setType: "normal",
         sets: [{ targetReps: 8 }, { targetReps: 8 }, { targetReps: 8 }],
         restAfterSetSec: 90,
@@ -341,12 +478,24 @@ async function saveEditorTemplate() {
   btn.textContent = "Salvataggio…";
   btn.disabled = true;
   try {
-    await apiPost("lift_save_template", {
-      id: s.id,
-      name: s.name.trim(),
-      notes: s.notes || "",
-      structure: s.structure,
-    });
+    const periodized =
+      s.structure.weeks && (s.structure.blocks || []).some((b) => b.perWeek);
+    if (periodized) {
+      // Import scheda periodizzata: crea esercizi mancanti + salva template.
+      await apiPost("lift_import_scheda", {
+        id: s.id,
+        name: s.name.trim(),
+        notes: s.notes || "",
+        structure: s.structure,
+      });
+    } else {
+      await apiPost("lift_save_template", {
+        id: s.id,
+        name: s.name.trim(),
+        notes: s.notes || "",
+        structure: s.structure,
+      });
+    }
     showScreen("home");
     await renderHome();
   } catch (e) {

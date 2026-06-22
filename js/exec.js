@@ -29,10 +29,45 @@ async function startSession(templateId) {
     startedAt: new Date().toISOString(),
     lastInteractionAt: Date.now(),
     blocks: structure.blocks || [],
+    weeks: structure.weeks || null,
+    currentWeek: structure.currentWeek || 1,
     bi: 0, // block index
     si: 0, // set index dentro il blocco
     done: [], // {exerciseRef, exerciseName, muscleGroup, type, weight, reps, note, bi, si}
     previousByExercise: full.previousByExercise || {},
+  };
+  persist();
+  acquireWakeLock();
+  showScreen("exec");
+  renderExec();
+}
+
+/**
+ * Avvia un workout che fa parte di un programma periodizzato.
+ * La settimana è quella corrente del programma (condivisa, per data/override).
+ */
+async function startProgramWorkout(programId, workoutId) {
+  const res = await apiPost("lift_get_program", { id: programId });
+  const prog = res && res.program ? res.program : null;
+  if (!prog) return liftAlert("Programma non trovato");
+  const wk = (prog.workouts || []).find((w) => w.id === workoutId);
+  if (!wk) return liftAlert("Workout non trovato");
+
+  const structure = wk.structure || { blocks: [] };
+  ex = {
+    templateId: programId + "/" + workoutId,
+    templateName: wk.name,
+    programId: programId,
+    programName: prog.nome,
+    startedAt: new Date().toISOString(),
+    lastInteractionAt: Date.now(),
+    blocks: structure.blocks || [],
+    weeks: prog.weeks || null,
+    currentWeek: prog.currentWeek || 1,
+    bi: 0,
+    si: 0,
+    done: [],
+    previousByExercise: {},
   };
   persist();
   acquireWakeLock();
@@ -103,8 +138,80 @@ function curExerciseOfBlock(b) {
     muscle: b.muscle || "",
   };
 }
+
+/**
+ * Set di un blocco per la settimana corrente.
+ * - Blocco periodizzato: b.perWeek[currentWeek-1].sets (+ eventuali warm-up aggiunti al volo).
+ * - Blocco vecchio formato: b.sets ({targetReps}) normalizzato a {reps,type}.
+ * Le warm-up aggiunte runtime vivono in b._extraSets (per blocco), in testa.
+ */
+function setsForBlock(b) {
+  let base;
+  if (b.perWeek) {
+    const wi = (ex.currentWeek || 1) - 1;
+    const wk = b.perWeek[wi] || b.perWeek[0] || { sets: [] };
+    base = (wk.sets || []).map((s) => ({ reps: s.reps, type: s.type || "work" }));
+  } else {
+    base = (b.sets || []).map((s) => ({
+      reps: s.targetReps != null ? s.targetReps : 8,
+      type: s.setType || "work",
+    }));
+  }
+  const extra = b._extraSets || [];
+  return extra.concat(base);
+}
+
 function totalSetsOfBlock(b) {
-  return (b.sets || []).length || 1;
+  return setsForBlock(b).length || 1;
+}
+
+/** La serie corrente (oggetto {reps,type}) del blocco corrente. */
+function curSet() {
+  const sets = setsForBlock(curBlock());
+  return sets[ex.si] || sets[0] || { reps: 8, type: "work" };
+}
+
+/** Etichetta leggibile dell'obiettivo reps (numero, range, "8rm", "max"). */
+function repsTargetLabel(set) {
+  return String(set.reps);
+}
+
+/** reps numeriche suggerite di partenza da un target (range/rm/max -> numero). */
+function repsTargetNumeric(set) {
+  const r = set.reps;
+  if (typeof r === "number") return r;
+  const str = String(r);
+  const range = str.match(/^(\d+)\s*-\s*(\d+)$/);
+  if (range) return parseInt(range[1], 10); // estremo basso del range
+  const rm = str.match(/^(\d+)\s*rm$/i);
+  if (rm) return parseInt(rm[1], 10);
+  const n = parseInt(str, 10);
+  return Number.isFinite(n) ? n : 8;
+}
+
+/** Secondi di rest da una stringa tipo "2'30\"", "1'30\"", "0", o numero. */
+function restSecondsOf(b) {
+  if (b.restAfterSetSec != null) return b.restAfterSetSec; // vecchio formato
+  const raw = b.rest;
+  if (raw == null || raw === "") return 0;
+  if (typeof raw === "number") return raw;
+  const str = String(raw).trim();
+  if (str === "0") return 0;
+  const m = str.match(/(?:(\d+)\s*')?\s*(\d+)?\s*"?/);
+  if (m) {
+    const min = parseInt(m[1] || "0", 10);
+    const sec = parseInt(m[2] || "0", 10);
+    return min * 60 + sec;
+  }
+  return 0;
+}
+
+/** Gli altri esercizi dello stesso superset del blocco corrente (per etichetta). */
+function supersetPartners(b) {
+  if (!b.supersetGroup) return [];
+  return ex.blocks.filter(
+    (x) => x !== b && x.supersetGroup === b.supersetGroup
+  );
 }
 
 /**
@@ -145,15 +252,36 @@ function renderExec() {
   const b = curBlock();
   const exo = curExerciseOfBlock(b);
   const totSets = totalSetsOfBlock(b);
-  const targetReps = (b.sets && b.sets[ex.si] && b.sets[ex.si].targetReps) || 8;
+  const set = curSet();
+  const targetLabel = repsTargetLabel(set);
+  const targetNum = repsTargetNumeric(set);
+  const isWarmup = set.type === "warmup";
   const sug = suggestedFor(ex.bi, ex.si);
   const sugW = sug ? sug.weight : null;
-  const sugR = sug ? sug.reps : targetReps;
+  const sugR = sug ? sug.reps : targetNum;
   const sugLabel = !sug
     ? "Nessun riferimento, parti come ti senti"
     : sug.source === "today"
     ? "Serie precedente: " + sug.weight + " kg × " + sug.reps
     : "Ultima volta: " + sug.weight + " kg × " + sug.reps;
+
+  // riga settimana + superset
+  const weekTag = ex.weeks
+    ? `<span class="ep-week">Settimana ${ex.currentWeek}/${ex.weeks}</span>`
+    : "";
+  const partners = supersetPartners(b);
+  const ssTag = b.supersetGroup
+    ? `<div class="exec-superset">Superset ${escapeHtml(b.supersetGroup)}${
+        partners.length
+          ? " · con " + partners.map((p) => escapeHtml(p.exerciseName)).join(", ")
+          : ""
+      }</div>`
+    : "";
+  const note = (b.note || b.noteDefault || "").trim();
+  const setTypeTag =
+    set.type && set.type !== "work"
+      ? `<span class="exec-settype exec-settype-${set.type}">${set.type}</span>`
+      : "";
 
   root.innerHTML = `
     <div class="exec-header">
@@ -162,31 +290,45 @@ function renderExec() {
         <div class="eh-timer" id="eh-timer">00:00:00</div>
       </div>
       <div class="exec-header-actions">
+        <button class="eh-overview" id="ex-overview" title="Panoramica scheda">${iconSvg(
+          "menu"
+        )}</button>
         <button class="eh-discard" id="ex-discard" title="Scarta sessione">✕</button>
         <button class="eh-end" id="ex-end">TERMINA</button>
       </div>
     </div>
     <div class="exec-body">
-      <div class="exec-progress">Esercizio ${ex.bi + 1} / ${
+      <div class="exec-top">
+        <div class="exec-progress">Esercizio ${ex.bi + 1} / ${
     ex.blocks.length
-  }</div>
-      <div class="exec-exname">${escapeHtml(exo.name)}</div>
-      <div class="exec-prev">${escapeHtml(sugLabel)}</div>
-      <div class="exec-set-nav">Serie ${ex.si + 1} / ${totSets} · obiettivo ${targetReps} reps</div>
-      <div class="exec-controls">
-        <button class="big-num" id="ex-weight">
-          <div class="bn-val" id="exw">${sugW != null ? sugW : "—"}</div>
-          <div class="bn-lab">peso kg</div>
-        </button>
-        <button class="big-check" id="ex-check" aria-label="Conferma">${iconSvg(
-          "check"
-        )}</button>
-        <button class="big-num" id="ex-reps">
-          <div class="bn-val" id="exr">${sugR != null ? sugR : "—"}</div>
-          <div class="bn-lab">reps</div>
-        </button>
+  } ${weekTag}</div>
+        ${ssTag}
+        <div class="exec-exname">${escapeHtml(exo.name)}</div>
+        ${note ? `<div class="exec-note">${escapeHtml(note)}</div>` : ""}
       </div>
+
+      <div class="exec-focus ${isWarmup ? "exec-focus-warmup" : ""}">
+        <div class="exec-set-nav">Serie ${ex.si + 1} / ${totSets} ${setTypeTag} · obiettivo ${escapeHtml(
+    targetLabel
+  )} reps</div>
+        <div class="exec-prev">${escapeHtml(sugLabel)}</div>
+        <div class="exec-controls">
+          <button class="big-num" id="ex-weight">
+            <div class="bn-val" id="exw">${sugW != null ? sugW : "—"}</div>
+            <div class="bn-lab">peso kg</div>
+          </button>
+          <button class="big-check" id="ex-check" aria-label="Conferma">${iconSvg(
+            "check"
+          )}</button>
+          <button class="big-num" id="ex-reps">
+            <div class="bn-val" id="exr">${sugR != null ? sugR : "—"}</div>
+            <div class="bn-lab">reps</div>
+          </button>
+        </div>
+      </div>
+
       <div class="exec-secondary">
+        <button class="exec-add-warmup" id="ex-add-warmup">+ avvicinamento</button>
         <button class="exec-skip" id="ex-skip">Salta serie</button>
       </div>
     </div>
@@ -195,12 +337,111 @@ function renderExec() {
   startSessionTimer();
   document.getElementById("ex-end").onclick = confirmEnd;
   document.getElementById("ex-discard").onclick = confirmDiscard;
+  document.getElementById("ex-overview").onclick = openOverview;
+  document.getElementById("ex-add-warmup").onclick = addWarmupSet;
   document.getElementById("ex-weight").onclick = () =>
     openNum("weight", parseFloat(document.getElementById("exw").textContent) || 0);
   document.getElementById("ex-reps").onclick = () =>
-    openNum("reps", parseInt(document.getElementById("exr").textContent, 10) || targetReps);
+    openNum("reps", parseInt(document.getElementById("exr").textContent, 10) || targetNum);
   document.getElementById("ex-check").onclick = confirmSet;
   document.getElementById("ex-skip").onclick = skipSet;
+}
+
+/* ---------- warm-up al volo (#5) ---------- */
+
+/**
+ * Aggiunge una serie di avvicinamento PRIMA della serie corrente, sul blocco
+ * corrente. Le extra vivono in b._extraSets (in testa ai set della settimana).
+ */
+function addWarmupSet() {
+  const b = curBlock();
+  if (!b._extraSets) b._extraSets = [];
+  b._extraSets.push({ reps: "", type: "warmup" });
+  // la nuova warm-up si inserisce nella posizione corrente; resto sulla stessa
+  // posizione così l'utente compila prima l'avvicinamento appena creato.
+  persist();
+  renderExec();
+}
+
+/* ---------- panoramica scheda + salto rapido (#tendina) ---------- */
+
+/** Quante serie risultano già registrate (done/skipped) per un blocco. */
+function doneCountForBlock(bi) {
+  return ex.done.filter((d) => d.bi === bi).length;
+}
+
+function openOverview() {
+  let o = document.getElementById("ov-modal");
+  if (!o) {
+    o = document.createElement("div");
+    o.id = "ov-modal";
+    o.className = "ov-modal";
+    document.body.appendChild(o);
+    o.addEventListener("click", (e) => {
+      if (e.target === o) o.classList.remove("open");
+    });
+  }
+
+  const weekTag = ex.weeks ? ` · Settimana ${ex.currentWeek}/${ex.weeks}` : "";
+  const items = ex.blocks
+    .map((b, bi) => {
+      const sets = setsForBlock(b);
+      const done = doneCountForBlock(bi);
+      const isCur = bi === ex.bi;
+      const dots = sets
+        .map((s, si) => {
+          const cls =
+            bi < ex.bi || (bi === ex.bi && si < ex.si)
+              ? "ov-dot-done"
+              : isCur && si === ex.si
+              ? "ov-dot-cur"
+              : "ov-dot-todo";
+          const wu = s.type === "warmup" ? " ov-dot-warmup" : "";
+          return `<span class="ov-dot ${cls}${wu}"></span>`;
+        })
+        .join("");
+      const ss = b.supersetGroup
+        ? `<span class="ov-ss">SS ${escapeHtml(b.supersetGroup)}</span>`
+        : "";
+      return `
+        <button class="ov-item ${isCur ? "ov-item-cur" : ""}" data-bi="${bi}">
+          <div class="ov-item-main">
+            <div class="ov-item-name">${escapeHtml(b.exerciseName)} ${ss}</div>
+            <div class="ov-item-dots">${dots}</div>
+          </div>
+          <div class="ov-item-meta">${done}/${sets.length}</div>
+        </button>`;
+    })
+    .join("");
+
+  o.innerHTML = `
+    <div class="ov-sheet">
+      <div class="ov-head">
+        <div class="ov-title">${escapeHtml(ex.templateName)}<span class="ov-sub">${weekTag}</span></div>
+        <button class="ov-close" id="ov-close">✕</button>
+      </div>
+      <div class="ov-list">${items}</div>
+    </div>`;
+
+  o.querySelector("#ov-close").onclick = () => o.classList.remove("open");
+  o.querySelectorAll(".ov-item").forEach((it) => {
+    it.onclick = () => {
+      const bi = parseInt(it.dataset.bi, 10);
+      jumpToBlock(bi);
+      o.classList.remove("open");
+    };
+  });
+  o.classList.add("open");
+}
+
+/** Salta all'inizio di un esercizio (per rifare/anticipare). */
+function jumpToBlock(bi) {
+  if (bi < 0 || bi >= ex.blocks.length) return;
+  ex.bi = bi;
+  ex.si = 0;
+  persist();
+  closeRest();
+  renderExec();
 }
 
 /* ---------- timer sessione (timestamp based) ---------- */
@@ -288,6 +529,7 @@ function round(v, kind) {
 function confirmSet() {
   const b = curBlock();
   const exo = curExerciseOfBlock(b);
+  const set = curSet();
   const weight = parseFloat(document.getElementById("exw").textContent) || 0;
   const reps = parseInt(document.getElementById("exr").textContent, 10) || 0;
 
@@ -295,12 +537,13 @@ function confirmSet() {
     exerciseRef: exo.ref,
     exerciseName: exo.name,
     muscleGroup: exo.muscle,
-    type: b.setType || "normal",
+    type: set.type || "work",
     weight: weight,
     reps: reps,
     note: "",
     bi: ex.bi,
     si: ex.si,
+    week: ex.currentWeek || 1,
   });
   persist();
   showUndo();
@@ -338,7 +581,7 @@ function advance(noRest) {
     return openFinish();
   }
   // rest: solo se la scheda lo prevede e non era uno skip
-  const restSec = b.restAfterSetSec || 0;
+  const restSec = restSecondsOf(b);
   if (!noRest && restSec > 0) {
     openRest(restSec);
   } else {

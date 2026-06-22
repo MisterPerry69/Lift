@@ -328,3 +328,162 @@
   margin-top: 2px;
   font-weight: 500;
 }
+
+/* ============================================
+   Importer JSON + blocco periodizzato (ForgE)
+   ============================================ */
+
+.import-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-4);
+  overflow: hidden;
+  box-shadow: var(--engrave);
+}
+.import-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+}
+.import-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--fs-small);
+  color: var(--text);
+}
+.import-title .icon { width: 16px; height: 16px; color: var(--accent); }
+.import-toggle {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-micro);
+  color: var(--accent);
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid var(--accent-ghost);
+  border-radius: var(--radius-pill);
+}
+.import-body {
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+.import-hint {
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  margin-bottom: var(--sp-3);
+  line-height: 1.5;
+}
+.import-textarea {
+  width: 100%;
+  min-height: 140px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  padding: var(--sp-3);
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+}
+.import-textarea:focus { border-color: var(--accent); }
+.import-error {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--danger-ghost);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+}
+.import-btn {
+  margin-top: var(--sp-3);
+  width: 100%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: var(--sp-3);
+  border-radius: var(--radius-pill);
+  transition: transform var(--t-fast), opacity var(--t-fast);
+}
+.import-btn:active { transform: scale(0.97); opacity: 0.9; }
+
+/* Blocco periodizzato */
+.block-periodized .ps-note {
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  margin-top: var(--sp-1);
+  font-style: italic;
+  line-height: 1.4;
+}
+.ps-ss {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-micro);
+  color: var(--accent);
+  border: 1px solid var(--accent-ghost);
+  border-radius: var(--radius-pill);
+  padding: 1px 8px;
+  margin-left: var(--sp-2);
+  vertical-align: middle;
+}
+.ps-weeks {
+  margin-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ps-week {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+}
+.ps-week-cur {
+  background: var(--accent-ghost);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.ps-week-lab {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  width: 24px;
+  flex-shrink: 0;
+}
+.ps-week-cur .ps-week-lab { color: var(--accent); }
+.ps-week-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.ps-set {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ps-type {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.6rem;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+}
+.ps-type-test { background: var(--gold-ghost); color: var(--gold); }
+.ps-type-max { background: var(--accent-ghost); color: var(--accent); }
+.ps-type-warmup { background: var(--surface-3); color: var(--text-dim); }
+.ps-type-failure { background: var(--danger-ghost); color: var(--danger); }

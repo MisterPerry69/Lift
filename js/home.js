@@ -3,16 +3,12 @@
    ============================================ */
 
 const GREETINGS = [
+  "Ciao, {name}",
+  "Si torna in pista, {name}",
+  "Pronto, {name}?",
   "Bentornato, {name}",
-  "Pronto a spingere, {name}?",
-  "Si parte, {name}",
-  "Andiamo, {name}",
-  "Ci siamo, {name}",
-  "Si riparte, {name}",
-  "Nuovo allenamento, {name}",
-  "Buona sessione, {name}",
-  "Daje, {name}!",
-  "Spacca tutto, {name}",
+  "Che si pesta oggi, {name}?",
+  "Forza {name}, si lavora",
 ];
 
 function randomGreeting(name) {
@@ -71,6 +67,10 @@ function daysSinceLabel(days) {
 async function renderHome() {
   const data = await apiGet("lift_get_data");
   const { profile, streakWeeks, templates } = data;
+  const programs = data.programs || [];
+
+  // catalogo esercizi condiviso (per picker editor / libreria)
+  if (data.exercises) EXERCISES_CATALOG = data.exercises;
 
   renderWeekBar(data.recentSessions || []);
 
@@ -93,6 +93,9 @@ async function renderHome() {
   const avatarBtn = document.getElementById("avatar-btn");
   avatarBtn.innerHTML = renderAvatar(profile, "home");
   avatarBtn.onclick = openProfile;
+
+  // Sezione programma periodizzato (se presente)
+  renderProgramSection(programs);
 
   // Hero = scheda suggerita (fatta meno di recente)
   const suggested = pickSuggestedTemplate(templates);
@@ -160,4 +163,102 @@ async function renderHome() {
   if (newBtn) newBtn.onclick = () => openEditor(null);
 }
 
-// startSession() vera vive in exec.js
+/* ---------- Sezione programma periodizzato ---------- */
+
+function renderProgramSection(programs) {
+  // contenitore: lo creo una volta, ancorato prima dell'hero-card
+  let sec = document.getElementById("program-section");
+  if (!sec) {
+    sec = document.createElement("section");
+    sec.id = "program-section";
+    const hero = document.getElementById("hero-card");
+    hero.parentNode.insertBefore(sec, hero);
+  }
+
+  const active = (programs || []).filter((p) => !p.completed);
+  if (active.length === 0) {
+    sec.innerHTML = "";
+    sec.hidden = true;
+    return;
+  }
+  sec.hidden = false;
+
+  // mostro il primo programma attivo (mono-programma per ora)
+  const p = active[0];
+  sec.innerHTML = `
+    <div class="prog-card">
+      <div class="prog-head">
+        <div>
+          <div class="prog-kicker">Programma</div>
+          <div class="prog-name">${escapeHtml(p.nome)}</div>
+        </div>
+        <button class="prog-week" id="prog-week-btn" title="Cambia settimana">
+          Settimana <strong>${p.currentWeek}</strong>/${p.weeks}
+        </button>
+      </div>
+      <ul class="prog-workouts">
+        ${p.workouts
+          .map(
+            (w) => `
+          <li class="prog-wk" data-prog="${escapeAttr(p.id)}" data-wk="${escapeAttr(w.id)}">
+            <div class="pw-name">${escapeHtml(w.name)}</div>
+            <div class="pw-meta">${w.exerciseCount} esercizi</div>
+            <span class="pw-arrow">${iconSvg("chevron-right")}</span>
+          </li>`
+          )
+          .join("")}
+      </ul>
+    </div>`;
+
+  sec.querySelectorAll(".prog-wk").forEach((li) => {
+    li.addEventListener("click", () =>
+      startProgramWorkout(li.dataset.prog, li.dataset.wk)
+    );
+  });
+  const wkBtn = sec.querySelector("#prog-week-btn");
+  if (wkBtn) wkBtn.onclick = () => openWeekPicker(p);
+}
+
+/** Modale per cambiare la settimana del programma (override manuale). */
+function openWeekPicker(p) {
+  let m = document.getElementById("week-modal");
+  if (!m) {
+    m = document.createElement("div");
+    m.id = "week-modal";
+    m.className = "dlg";
+    document.body.appendChild(m);
+    m.addEventListener("click", (e) => {
+      if (e.target === m) m.classList.remove("show");
+    });
+  }
+  const weeks = [];
+  for (let i = 1; i <= p.weeks; i++) {
+    weeks.push(
+      `<button class="wk-opt ${i === p.currentWeek ? "wk-opt-cur" : ""}" data-w="${i}">W${i}</button>`
+    );
+  }
+  m.innerHTML = `
+    <div class="dlg-box">
+      <div class="dlg-title">Settimana corrente</div>
+      <div class="dlg-msg">Di norma avanza da sola col calendario. Forzala solo se sei più avanti o indietro.</div>
+      <div class="wk-grid">${weeks.join("")}</div>
+      <div class="dlg-actions dlg-actions-top">
+        <button class="dlg-btn dlg-btn-cancel" id="wk-auto">Automatica (data)</button>
+      </div>
+    </div>`;
+  m.querySelectorAll(".wk-opt").forEach((b) => {
+    b.onclick = async () => {
+      await apiPost("lift_set_program_week", { id: p.id, weekOverride: parseInt(b.dataset.w, 10) });
+      m.classList.remove("show");
+      await renderHome();
+    };
+  });
+  m.querySelector("#wk-auto").onclick = async () => {
+    await apiPost("lift_set_program_week", { id: p.id, weekOverride: "" });
+    m.classList.remove("show");
+    await renderHome();
+  };
+  m.classList.add("show");
+}
+
+// startSession() / startProgramWorkout() vivono in exec.js
