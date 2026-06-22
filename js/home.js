@@ -97,9 +97,25 @@ async function renderHome() {
   // Sezione programma periodizzato (se presente)
   renderProgramSection(programs);
 
+  const hero = document.getElementById("hero-card");
+  const list = document.getElementById("template-list");
+  const otherLabel = document.querySelector(".section-label");
+  const newBtnEl = document.getElementById("home-new-template");
+  const hasActiveProgram = (programs || []).some((p) => !p.completed);
+
+  // Programma unico protagonista: niente hero/altre-schede quando c'è un programma.
+  if (hasActiveProgram) {
+    hero.hidden = true;
+    list.innerHTML = "";
+    if (otherLabel) otherLabel.hidden = true;
+    if (newBtnEl) newBtnEl.onclick = () => openEditor(null);
+    return;
+  }
+  hero.hidden = false;
+  if (otherLabel) otherLabel.hidden = false;
+
   // Hero = scheda suggerita (fatta meno di recente)
   const suggested = pickSuggestedTemplate(templates);
-  const hero = document.getElementById("hero-card");
 
   // Empty state: nessuna scheda ancora
   if (!suggested) {
@@ -138,7 +154,6 @@ async function renderHome() {
 
   // Altre schede (escludo la suggerita)
   const others = templates.filter((t) => t.id !== suggested.id);
-  const list = document.getElementById("template-list");
   list.innerHTML = others
     .map(
       (t) => `

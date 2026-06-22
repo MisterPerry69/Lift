@@ -568,20 +568,82 @@ function skipSet() {
   advance(true);
 }
 
+/**
+ * Indici dei blocchi che formano il gruppo superset del blocco `bi`
+ * (blocchi CONSECUTIVI con lo stesso supersetGroup non nullo).
+ * Se il blocco non è in un superset, ritorna [bi].
+ */
+function supersetGroupIndices(bi) {
+  const g = ex.blocks[bi] && ex.blocks[bi].supersetGroup;
+  if (!g) return [bi];
+  const idx = [];
+  let i = bi;
+  while (i >= 0 && ex.blocks[i].supersetGroup === g) i--; // primo del gruppo
+  i++;
+  while (i < ex.blocks.length && ex.blocks[i].supersetGroup === g) {
+    idx.push(i);
+    i++;
+  }
+  return idx;
+}
+
 function advance(noRest) {
   const b = curBlock();
-  const totSets = totalSetsOfBlock(b);
-  ex.si++;
-  if (ex.si >= totSets) {
-    ex.si = 0;
-    ex.bi++;
+  const restSec = restSecondsOf(b);
+  const group = supersetGroupIndices(ex.bi);
+
+  if (group.length > 1) {
+    // SUPERSET: alterno gli esercizi del gruppo a parità di serie, poi avanzo serie.
+    // maxSets = giri totali del superset; un esercizio con meno serie viene saltato
+    // nei giri eccedenti.
+    const maxSets = Math.max.apply(
+      null,
+      group.map((gi) => totalSetsOfBlock(ex.blocks[gi]))
+    );
+    const pos = group.indexOf(ex.bi);
+    // cerca il prossimo esercizio del giro corrente che ha ancora questa serie
+    let next = -1;
+    for (let k = pos + 1; k < group.length; k++) {
+      if (ex.si < totalSetsOfBlock(ex.blocks[group[k]])) {
+        next = group[k];
+        break;
+      }
+    }
+    if (next >= 0) {
+      ex.bi = next; // prossimo esercizio, stessa serie
+    } else {
+      // giro completato: avanzo serie, torno al primo esercizio che ha quella serie
+      ex.si++;
+      if (ex.si >= maxSets) {
+        ex.si = 0;
+        ex.bi = group[group.length - 1] + 1; // superset finito
+      } else {
+        let first = -1;
+        for (let k = 0; k < group.length; k++) {
+          if (ex.si < totalSetsOfBlock(ex.blocks[group[k]])) {
+            first = group[k];
+            break;
+          }
+        }
+        ex.bi = first >= 0 ? first : group[group.length - 1] + 1;
+        if (first < 0) ex.si = 0;
+      }
+    }
+  } else {
+    // BLOCCO SINGOLO: comportamento classico
+    const totSets = totalSetsOfBlock(b);
+    ex.si++;
+    if (ex.si >= totSets) {
+      ex.si = 0;
+      ex.bi++;
+    }
   }
+
   persist();
   if (ex.bi >= ex.blocks.length) {
     return openFinish();
   }
   // rest: solo se la scheda lo prevede e non era uno skip
-  const restSec = restSecondsOf(b);
   if (!noRest && restSec > 0) {
     openRest(restSec);
   } else {
