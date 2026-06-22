@@ -99,7 +99,7 @@ async function renderHome() {
 
   const hero = document.getElementById("hero-card");
   const list = document.getElementById("template-list");
-  const otherLabel = document.querySelector(".section-label");
+  const otherLabel = document.querySelector("#screen-home .section-label");
   const newBtnEl = document.getElementById("home-new-template");
   const hasActiveProgram = (programs || []).some((p) => !p.completed);
 

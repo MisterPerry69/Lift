@@ -146,6 +146,11 @@ function curExerciseOfBlock(b) {
  * Le warm-up aggiunte runtime vivono in b._extraSets (per blocco), in testa.
  */
 function setsForBlock(b) {
+  // un esercizio a durata conta come 1 "unità" (per panoramica/progress)
+  if (isDurationBlock(b)) {
+    const d = durationForBlock(b);
+    return [{ reps: d.durataMin + "′", type: "duration" }];
+  }
   let base;
   if (b.perWeek) {
     const wi = (ex.currentWeek || 1) - 1;
@@ -163,6 +168,18 @@ function setsForBlock(b) {
 
 function totalSetsOfBlock(b) {
   return setsForBlock(b).length || 1;
+}
+
+/** true se il blocco è un esercizio a durata (cardio a tempo). */
+function isDurationBlock(b) {
+  return b && b.kind === "durata";
+}
+
+/** Dati durata della settimana corrente: { durataMin, parametri }. */
+function durationForBlock(b) {
+  const wi = (ex.currentWeek || 1) - 1;
+  const wk = (b.perWeek && (b.perWeek[wi] || b.perWeek[0])) || {};
+  return { durataMin: wk.durataMin || 0, parametri: wk.parametri || "" };
 }
 
 /** La serie corrente (oggetto {reps,type}) del blocco corrente. */
@@ -250,6 +267,9 @@ function renderExec() {
     return openFinish();
   }
   const b = curBlock();
+  if (isDurationBlock(b)) {
+    return renderExecDuration(b);
+  }
   const exo = curExerciseOfBlock(b);
   const totSets = totalSetsOfBlock(b);
   const set = curSet();
@@ -360,6 +380,100 @@ function addWarmupSet() {
   // la nuova warm-up si inserisce nella posizione corrente; resto sulla stessa
   // posizione così l'utente compila prima l'avvicinamento appena creato.
   persist();
+  renderExec();
+}
+
+/* ---------- esercizio a DURATA (cardio a tempo) ---------- */
+
+function renderExecDuration(b) {
+  const root = document.getElementById("screen-exec");
+  const exo = curExerciseOfBlock(b);
+  const d = durationForBlock(b);
+  const weekTag = ex.weeks
+    ? `<span class="ep-week">Settimana ${ex.currentWeek}/${ex.weeks}</span>`
+    : "";
+  const note = (b.note || b.noteDefault || "").trim();
+
+  root.innerHTML = `
+    <div class="exec-header">
+      <div>
+        <div class="eh-name">${escapeHtml(ex.templateName)}</div>
+        <div class="eh-timer" id="eh-timer">00:00:00</div>
+      </div>
+      <div class="exec-header-actions">
+        <button class="eh-overview" id="ex-overview" title="Panoramica scheda">${iconSvg(
+          "menu"
+        )}</button>
+        <button class="eh-discard" id="ex-discard" title="Scarta sessione">✕</button>
+        <button class="eh-end" id="ex-end">TERMINA</button>
+      </div>
+    </div>
+    <div class="exec-body">
+      <div class="exec-top">
+        <div class="exec-progress">Esercizio ${ex.bi + 1} / ${
+    ex.blocks.length
+  } ${weekTag}</div>
+        <div class="exec-exname">${escapeHtml(exo.name)}</div>
+        ${note ? `<div class="exec-note">${escapeHtml(note)}</div>` : ""}
+      </div>
+
+      <div class="exec-focus">
+        <div class="dur-params">
+          <div class="dur-minutes"><strong>${d.durataMin}</strong> min</div>
+          ${d.parametri ? `<div class="dur-extra">${escapeHtml(d.parametri)}</div>` : ""}
+        </div>
+        <button class="dur-timer-btn" id="ex-dur-timer">${iconSvg("play")} Avvia timer ${d.durataMin}′</button>
+      </div>
+
+      <div class="exec-secondary">
+        <button class="exec-skip" id="ex-skip">Salta</button>
+        <button class="big-check dur-done" id="ex-check" aria-label="Fatto">${iconSvg("check")}</button>
+      </div>
+    </div>
+  `;
+
+  startSessionTimer();
+  document.getElementById("ex-end").onclick = confirmEnd;
+  document.getElementById("ex-discard").onclick = confirmDiscard;
+  document.getElementById("ex-overview").onclick = openOverview;
+  document.getElementById("ex-dur-timer").onclick = () => openRest(d.durataMin * 60);
+  document.getElementById("ex-check").onclick = confirmDuration;
+  document.getElementById("ex-skip").onclick = skipDuration;
+}
+
+function confirmDuration() {
+  const b = curBlock();
+  const exo = curExerciseOfBlock(b);
+  const d = durationForBlock(b);
+  ex.done.push({
+    exerciseRef: exo.ref,
+    exerciseName: exo.name,
+    muscleGroup: exo.muscle,
+    type: "duration",
+    durataMin: d.durataMin,
+    parametri: d.parametri,
+    weight: null,
+    reps: null,
+    note: "",
+    bi: ex.bi,
+    si: 0,
+    week: ex.currentWeek || 1,
+  });
+  persist();
+  showUndo();
+  // un esercizio durata = un blocco intero: avanzo al blocco successivo
+  closeRest();
+  ex.si = 0;
+  ex.bi++;
+  persist();
+  renderExec();
+}
+
+function skipDuration() {
+  ex.si = 0;
+  ex.bi++;
+  persist();
+  closeRest();
   renderExec();
 }
 

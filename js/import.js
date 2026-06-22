@@ -103,13 +103,34 @@ function _parseWorkoutBlocks(workout, weeks, prefix) {
       );
     }
 
-    const perWeek = ex.perSettimana.map((wk, wi) => {
-      const wctx = `${where}, settimana ${wi + 1}`;
-      if (!wk || !Array.isArray(wk.serie) || wk.serie.length === 0) {
-        throw new ImportError(`${wctx}: manca "serie" (array non vuoto).`);
-      }
-      return { sets: wk.serie.map((s) => parseImportSet(s, wctx)) };
-    });
+    // tipo esercizio: "serie" (default) o "durata" (cardio a tempo)
+    const kind = String(ex.tipoEsercizio || "serie").toLowerCase();
+    if (kind !== "serie" && kind !== "durata") {
+      throw new ImportError(`${where}: "tipoEsercizio" sconosciuto "${kind}" (ammessi: serie, durata).`);
+    }
+
+    let perWeek;
+    if (kind === "durata") {
+      perWeek = ex.perSettimana.map((wk, wi) => {
+        const wctx = `${where}, settimana ${wi + 1}`;
+        if (!wk || wk.durata == null || wk.durata === "") {
+          throw new ImportError(`${wctx}: manca "durata" (minuti) per un esercizio a durata.`);
+        }
+        const min = parseInt(wk.durata, 10);
+        if (!Number.isFinite(min) || min <= 0) {
+          throw new ImportError(`${wctx}: "durata" deve essere un numero di minuti > 0.`);
+        }
+        return { durataMin: min, parametri: wk.parametri ? String(wk.parametri) : "" };
+      });
+    } else {
+      perWeek = ex.perSettimana.map((wk, wi) => {
+        const wctx = `${where}, settimana ${wi + 1}`;
+        if (!wk || !Array.isArray(wk.serie) || wk.serie.length === 0) {
+          throw new ImportError(`${wctx}: manca "serie" (array non vuoto).`);
+        }
+        return { sets: wk.serie.map((s) => parseImportSet(s, wctx)) };
+      });
+    }
 
     return {
       exerciseRef: "ex:" + importExSlug(exName),
@@ -119,6 +140,7 @@ function _parseWorkoutBlocks(workout, weeks, prefix) {
       note: ex.nota || "",
       rest: ex.rest || "",
       supersetGroup: ex.superset != null ? String(ex.superset) : null,
+      kind: kind, // "serie" | "durata"
       perWeek: perWeek,
     };
   });

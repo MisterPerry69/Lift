@@ -297,7 +297,7 @@
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.1;
-  margin-bottom: var(--sp-1);
+  margin: 0 auto var(--sp-1);
   max-width: 300px;
 }
 
@@ -650,3 +650,46 @@
   font-weight: 800;
   letter-spacing: 0.02em;
 }
+
+/* ============================================
+   Esercizio a durata (cardio a tempo)
+   ============================================ */
+.dur-params {
+  text-align: center;
+  margin-bottom: var(--sp-5);
+}
+.dur-minutes {
+  font-family: var(--font-mono);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.dur-minutes strong { color: var(--accent); }
+.dur-extra {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  margin-top: var(--sp-2);
+}
+.dur-timer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-body);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--radius-pill);
+  transition: border-color var(--t-fast), transform var(--t-fast);
+}
+.dur-timer-btn:active { transform: scale(0.96); border-color: var(--accent); }
+.dur-timer-btn .icon { width: 18px; height: 18px; color: var(--accent); }
+.big-check.dur-done { width: 64px; height: 64px; }
+.big-check.dur-done svg { width: 28px; height: 28px; }

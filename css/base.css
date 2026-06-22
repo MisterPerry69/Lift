@@ -10,6 +10,11 @@
   padding: 0;
 }
 
+/* L'attributo [hidden] deve sempre vincere su display di classe (es. .hero-card flex). */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   height: 100%;

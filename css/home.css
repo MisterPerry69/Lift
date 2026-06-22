@@ -117,27 +117,16 @@
 }
 
 .wb-day .wb-dot {
-  position: absolute;
-  top: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  display: none;
+  display: none; /* non più usato: il giorno allenato si marca col bordo */
 }
-.wb-day.has-session .wb-dot {
-  display: block;
-}
-/* giorno allenato (non oggi): bordo accent per renderlo evidente */
-.wb-day.has-session:not(.today) {
+/* Giorno allenato: tutto il box bordato di rosso accent. */
+.wb-day.has-session {
   border-color: var(--accent);
-  background: var(--accent-ghost);
+  border-width: 2px;
 }
-/* oggi allenato: sfondo bianco, quindi dot rosso ben visibile in alto */
-.wb-day.today.has-session .wb-dot {
-  background: var(--accent);
+/* anche oggi (sfondo bianco) prende il bordo rosso, ben visibile */
+.wb-day.today.has-session {
+  border-color: var(--accent);
 }
 
 /* Hero card */
