@@ -29,8 +29,8 @@
 }
 
 .splash-logo {
-  width: 72px;
-  height: 72px;
+  width: auto;
+  height: auto;
   border-radius: var(--radius);
   object-fit: contain;
 }
