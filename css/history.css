@@ -171,35 +171,74 @@
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
-  padding: var(--sp-3) var(--sp-4);
-  margin-bottom: var(--sp-2);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.sd-ex-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
 }
 .sd-ex-name {
   font-weight: 700;
   font-size: var(--fs-body);
   letter-spacing: -0.01em;
 }
-.sd-ex-sets {
-  margin-top: var(--sp-2);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-}
-.sd-set {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+.sd-ex-pr {
+  flex-shrink: 0;
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--fs-micro);
+  color: var(--gold);
+  background: var(--gold-ghost);
   border-radius: var(--radius-pill);
-  padding: 3px var(--sp-3);
-  font-size: var(--fs-small);
-  font-family: var(--font);
-  font-weight: 500;
+  padding: 2px 8px;
 }
-.sd-set.pr {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-ghost);
+.sd-ex-rows {
+  display: flex;
+  flex-direction: column;
 }
-.sd-set.skip {
+.sd-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-top: 1px solid var(--border-soft);
+}
+.sd-row:first-child { border-top: none; }
+.sd-row-n {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  width: 18px;
+  flex-shrink: 0;
+}
+.sd-row-val {
+  flex: 1;
+  font-size: var(--fs-body);
+  color: var(--text);
+}
+.sd-row-val strong {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+.sd-row-skip .sd-row-val {
   color: var(--text-dim-2);
   text-decoration: line-through;
 }
+.sd-row-type {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.6rem;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+.sd-row-type-test { background: var(--gold-ghost); color: var(--gold); }
+.sd-row-type-max { background: var(--accent-ghost); color: var(--accent); }
+.sd-row-type-warmup { background: var(--surface-3); color: var(--text-dim); }
+.sd-row-type-failure { background: var(--danger-ghost); color: var(--danger); }

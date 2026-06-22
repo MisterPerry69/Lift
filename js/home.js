@@ -103,16 +103,20 @@ async function renderHome() {
   const newBtnEl = document.getElementById("home-new-template");
   const hasActiveProgram = (programs || []).some((p) => !p.completed);
 
-  // Programma unico protagonista: niente hero/altre-schede quando c'è un programma.
+  // Programma unico protagonista: niente hero/altre-schede/nuova-scheda quando c'è un programma.
   if (hasActiveProgram) {
     hero.hidden = true;
     list.innerHTML = "";
     if (otherLabel) otherLabel.hidden = true;
-    if (newBtnEl) newBtnEl.onclick = () => openEditor(null);
+    if (newBtnEl) newBtnEl.hidden = true;
     return;
   }
   hero.hidden = false;
   if (otherLabel) otherLabel.hidden = false;
+  if (newBtnEl) {
+    newBtnEl.hidden = false;
+    newBtnEl.onclick = () => openEditor(null);
+  }
 
   // Hero = scheda suggerita (fatta meno di recente)
   const suggested = pickSuggestedTemplate(templates);

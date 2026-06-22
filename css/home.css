@@ -121,8 +121,8 @@
   top: 4px;
   left: 50%;
   transform: translateX(-50%);
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--accent);
   display: none;
@@ -130,8 +130,14 @@
 .wb-day.has-session .wb-dot {
   display: block;
 }
+/* giorno allenato (non oggi): bordo accent per renderlo evidente */
+.wb-day.has-session:not(.today) {
+  border-color: var(--accent);
+  background: var(--accent-ghost);
+}
+/* oggi allenato: sfondo bianco, quindi dot rosso ben visibile in alto */
 .wb-day.today.has-session .wb-dot {
-  background: var(--on-accent);
+  background: var(--accent);
 }
 
 /* Hero card */
@@ -329,7 +335,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: var(--sp-4);
+  padding: var(--sp-5);
   box-shadow: var(--engrave);
 }
 .prog-head {
@@ -337,7 +343,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-3);
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-4);
 }
 .prog-kicker {
   font-family: var(--font-cond);
@@ -349,9 +355,9 @@
 }
 .prog-name {
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: 1.9rem;
   line-height: 1.1;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 .prog-week {
   flex-shrink: 0;
@@ -372,7 +378,7 @@
 .prog-workouts {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
 }
 .prog-wk {
   display: flex;
@@ -381,14 +387,15 @@
   background: var(--surface-2);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
-  padding: var(--sp-3);
+  padding: var(--sp-4);
+  min-height: 64px;
   transition: transform var(--t-fast), border-color var(--t-fast);
 }
 .prog-wk:active { transform: scale(0.985); border-color: var(--accent); }
 .pw-name {
   flex: 1;
-  font-weight: 600;
-  font-size: var(--fs-body);
+  font-weight: 700;
+  font-size: 1.05rem;
 }
 .pw-meta {
   font-size: var(--fs-small);

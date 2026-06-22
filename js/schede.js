@@ -20,15 +20,41 @@ async function openSchede() {
 
   const data = await apiGet("lift_get_data", {}, { silent: true });
   const templates = (data && data.templates) || [];
+  const programs = (data && data.programs) || [];
   const list = document.getElementById("sch-list");
-  if (templates.length === 0) {
-    list.innerHTML = `<div class="empty-state">Nessuna scheda. Tap + per crearne una.</div>`;
-    return;
-  }
-  list.innerHTML = templates
-    .map((t) => {
-      const days = t.daysSince >= 999 ? "mai eseguita" : daysSinceLabel(t.daysSince);
-      return `
+
+  let html = "";
+
+  // Workout dei programmi attivi (rimando: tap = avvia il workout alla settimana corrente)
+  programs
+    .filter((p) => !p.completed)
+    .forEach((p) => {
+      html += `<div class="section-label label-micro sch-group-label">${escapeHtml(
+        p.nome
+      )} · Settimana ${p.currentWeek}/${p.weeks}</div>`;
+      html += p.workouts
+        .map(
+          (w) => `
+        <button class="sch-item" data-prog="${escapeAttr(p.id)}" data-wk="${escapeAttr(w.id)}">
+          <div class="sch-info">
+            <div class="sch-name">${escapeHtml(w.name)}</div>
+            <div class="sch-meta">${w.exerciseCount} esercizi</div>
+          </div>
+          <span class="sch-arrow">${iconSvg("chevron-right")}</span>
+        </button>`
+        )
+        .join("");
+    });
+
+  // Schede singole (non periodizzate), se presenti
+  if (templates.length) {
+    if (programs.length) {
+      html += `<div class="section-label label-micro sch-group-label">Altre schede</div>`;
+    }
+    html += templates
+      .map((t) => {
+        const days = t.daysSince >= 999 ? "mai eseguita" : daysSinceLabel(t.daysSince);
+        return `
         <button class="sch-item" data-id="${escapeAttr(t.id)}">
           <div class="sch-info">
             <div class="sch-name">${escapeHtml(t.name)}</div>
@@ -38,9 +64,22 @@ async function openSchede() {
           <img class="sch-illus" src="assets/illus-${escapeAttr(t.id)}.svg" alt=""
                aria-hidden="true" onerror="this.src='assets/illus-hero.svg'" />
         </button>`;
-    })
-    .join("");
-  list.querySelectorAll(".sch-item").forEach((b) => {
+      })
+      .join("");
+  }
+
+  if (!html) {
+    list.innerHTML = `<div class="empty-state">Nessuna scheda. Tap + per crearne una.</div>`;
+    return;
+  }
+  list.innerHTML = html;
+
+  // workout di programma → avvia
+  list.querySelectorAll(".sch-item[data-prog]").forEach((b) => {
+    b.onclick = () => startProgramWorkout(b.dataset.prog, b.dataset.wk);
+  });
+  // schede singole → dettaglio
+  list.querySelectorAll(".sch-item[data-id]").forEach((b) => {
     b.onclick = () => openSchedaDetail(b.dataset.id);
   });
 }

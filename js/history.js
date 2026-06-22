@@ -83,10 +83,11 @@ async function openSessionDetail(sessionId) {
     root.innerHTML = `<div class="empty-state">Sessione non trovata</div>`;
     return;
   }
-  _renderSessionDetail(res.session, res.sets || []);
+  _renderSessionDetail(res.session, res.sets || [], res.prs || []);
 }
 
-function _renderSessionDetail(s, sets) {
+function _renderSessionDetail(s, sets, prs) {
+  prs = prs || [];
   const root = document.getElementById("screen-session-detail");
   const dateStr = s.startedAt
     ? new Date(s.startedAt).toLocaleDateString("it-IT", {
@@ -96,6 +97,14 @@ function _renderSessionDetail(s, sets) {
       })
     : "—";
   const dur = s.durationSec ? Math.round(s.durationSec / 60) + " min" : "—";
+
+  // PR per esercizio (dai dati prs reali della sessione)
+  const prByEx = {};
+  prs.forEach((p) => {
+    if (!prByEx[p.exerciseRef]) prByEx[p.exerciseRef] = [];
+    prByEx[p.exerciseRef].push(p.prType);
+  });
+  const prCount = prs.length;
 
   // raggruppo i set per exerciseRef nell'ordine in cui appaiono
   const byEx = {};
@@ -110,34 +119,47 @@ function _renderSessionDetail(s, sets) {
   });
 
   let totalVolume = 0;
-  let prCount = 0;
   sets.forEach((st) => {
     totalVolume += parseFloat(st.volume) || 0;
-    if (String(st.isPR).toLowerCase() === "true") prCount++;
   });
+
+  const PR_LABEL = { "1rm": "1RM", volume: "Volume", heaviest: "Massimale" };
 
   const exHtml = order
     .map((k) => {
       const ex = byEx[k];
-      const setsHtml = ex.sets
-        .map((st) => {
+      const exPRs = prByEx[k] || [];
+      const prBadge = exPRs.length
+        ? `<span class="sd-ex-pr">★ ${exPRs
+            .map((t) => PR_LABEL[t] || t)
+            .join(" · ")}</span>`
+        : "";
+      const rowsHtml = ex.sets
+        .map((st, i) => {
           if (st.setType === "skipped") {
-            return `<span class="sd-set skip">salto</span>`;
+            return `<div class="sd-row sd-row-skip"><span class="sd-row-n">${i + 1}</span><span class="sd-row-val">saltata</span></div>`;
           }
-          const isPR = String(st.isPR).toLowerCase() === "true";
-          const label =
-            (st.weight !== "" ? st.weight : "?") +
-            " × " +
-            (st.reps !== "" ? st.reps : "?");
-          return `<span class="sd-set${isPR ? " pr" : ""}">${
-            isPR ? "★ " : ""
-          }${label}</span>`;
+          const w = st.weight !== "" ? st.weight : "—";
+          const r = st.reps !== "" ? st.reps : "—";
+          const typeTag =
+            st.setType && st.setType !== "work" && st.setType !== "normal"
+              ? `<span class="sd-row-type sd-row-type-${st.setType}">${st.setType}</span>`
+              : "";
+          return `
+            <div class="sd-row">
+              <span class="sd-row-n">${i + 1}</span>
+              <span class="sd-row-val"><strong>${w}</strong> kg × <strong>${r}</strong></span>
+              ${typeTag}
+            </div>`;
         })
         .join("");
       return `
         <div class="sd-ex">
-          <div class="sd-ex-name">${escapeHtml(ex.name)}</div>
-          <div class="sd-ex-sets">${setsHtml}</div>
+          <div class="sd-ex-head">
+            <div class="sd-ex-name">${escapeHtml(ex.name)}</div>
+            ${prBadge}
+          </div>
+          <div class="sd-ex-rows">${rowsHtml}</div>
         </div>`;
     })
     .join("");
