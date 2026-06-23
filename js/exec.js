@@ -311,7 +311,7 @@ function renderExec() {
       </div>
       <div class="exec-header-actions">
         <button class="eh-overview" id="ex-overview" title="Panoramica scheda">${iconSvg(
-          "menu"
+          "list"
         )}</button>
         <button class="eh-discard" id="ex-discard" title="Scarta sessione">✕</button>
         <button class="eh-end" id="ex-end">TERMINA</button>
@@ -402,7 +402,7 @@ function renderExecDuration(b) {
       </div>
       <div class="exec-header-actions">
         <button class="eh-overview" id="ex-overview" title="Panoramica scheda">${iconSvg(
-          "menu"
+          "list"
         )}</button>
         <button class="eh-discard" id="ex-discard" title="Scarta sessione">✕</button>
         <button class="eh-end" id="ex-end">TERMINA</button>
@@ -423,11 +423,11 @@ function renderExecDuration(b) {
           ${d.parametri ? `<div class="dur-extra">${escapeHtml(d.parametri)}</div>` : ""}
         </div>
         <button class="dur-timer-btn" id="ex-dur-timer">${iconSvg("play")} Avvia timer ${d.durataMin}′</button>
+        <button class="dur-done-btn" id="ex-dur-done">${iconSvg("check")} Segna come fatto</button>
       </div>
 
       <div class="exec-secondary">
-        <button class="exec-skip" id="ex-skip">Salta</button>
-        <button class="big-check dur-done" id="ex-check" aria-label="Fatto">${iconSvg("check")}</button>
+        <button class="exec-skip" id="ex-skip">Salta esercizio</button>
       </div>
     </div>
   `;
@@ -436,8 +436,15 @@ function renderExecDuration(b) {
   document.getElementById("ex-end").onclick = confirmEnd;
   document.getElementById("ex-discard").onclick = confirmDiscard;
   document.getElementById("ex-overview").onclick = openOverview;
-  document.getElementById("ex-dur-timer").onclick = () => openRest(d.durataMin * 60);
-  document.getElementById("ex-check").onclick = confirmDuration;
+  // Avvia timer: parte il cardio; a fine timer (o "FATTO") registra e avanza.
+  document.getElementById("ex-dur-timer").onclick = () =>
+    openRest(d.durataMin * 60, {
+      label: "Cardio",
+      hint: escapeHtml(exo.name),
+      onComplete: confirmDuration,
+    });
+  // "Segna come fatto" senza usare il timer (se l'hai fatto sulla macchina)
+  document.getElementById("ex-dur-done").onclick = confirmDuration;
   document.getElementById("ex-skip").onclick = skipDuration;
 }
 
@@ -461,8 +468,8 @@ function confirmDuration() {
   });
   persist();
   showUndo();
-  // un esercizio durata = un blocco intero: avanzo al blocco successivo
-  closeRest();
+  // un esercizio durata = un blocco intero: avanzo al blocco successivo.
+  // (il timer cardio, se attivo, si è già chiuso prima di chiamare qui)
   ex.si = 0;
   ex.bi++;
   persist();
@@ -473,7 +480,6 @@ function skipDuration() {
   ex.si = 0;
   ex.bi++;
   persist();
-  closeRest();
   renderExec();
 }
 
@@ -797,17 +803,31 @@ function showUndo() {
 
 /* ---------- rest timer ---------- */
 
-function openRest(sec) {
+// callback eseguito quando il timer arriva a 0 (usato dal timer cardio)
+let _restOnComplete = null;
+
+/**
+ * Timer a cerchio. opts: { label, hint, onComplete }.
+ * Default = riposo tra serie (label "Riposo"). Per il cardio si passa
+ * label "Cardio" e onComplete che registra/avanza.
+ */
+function openRest(sec, opts) {
+  opts = opts || {};
+  const label = opts.label || "Riposo";
+  const hint = opts.hint || "prossima serie";
+  _restOnComplete = opts.onComplete || null;
+
   ex.restEndsAt = Date.now() + sec * 1000;
   persist();
+  // ricreo sempre l'overlay (così label/hint sono corretti per rest vs cardio)
   let o = document.getElementById("rest-ov");
-  if (!o) {
-    o = document.createElement("div");
-    o.id = "rest-ov";
-    o.className = "rest-overlay";
-    // SVG ring: circumference = 2π * 98 ≈ 615.75
-    o.innerHTML = `
-      <div class="rest-label">Riposo</div>
+  if (o) o.remove();
+  o = document.createElement("div");
+  o.id = "rest-ov";
+  o.className = "rest-overlay";
+  // SVG ring: circumference = 2π * 98 ≈ 615.75
+  o.innerHTML = `
+      <div class="rest-label">${escapeHtml(label)}</div>
       <div class="rest-circle-wrap">
         <svg class="rest-ring-svg" viewBox="0 0 220 220">
           <circle class="rest-ring-bg" cx="110" cy="110" r="98"/>
@@ -816,25 +836,41 @@ function openRest(sec) {
         </svg>
         <div class="rest-circle-inner">
           <div class="rest-time" id="rest-num">0:00</div>
-          <div class="rest-next-hint">prossima serie</div>
+          <div class="rest-next-hint">${escapeHtml(hint)}</div>
         </div>
       </div>
       <div class="rest-actions">
         <button class="rest-btn" id="rest-minus">−15s</button>
-        <button class="rest-btn rest-skip" id="rest-skip">SALTA</button>
+        <button class="rest-btn rest-skip" id="rest-skip">${
+          _restOnComplete ? "FATTO" : "SALTA"
+        }</button>
         <button class="rest-btn" id="rest-plus">+15s</button>
       </div>`;
-    document.body.appendChild(o);
-    o.querySelector("#rest-minus").onclick = () => {
-      ex.restEndsAt -= 15000;
+  document.body.appendChild(o);
+  o.querySelector("#rest-minus").onclick = () => {
+    ex.restEndsAt -= 15000;
+    persist();
+  };
+  o.querySelector("#rest-plus").onclick = () => {
+    ex.restEndsAt += 15000;
+    persist();
+  };
+  // "SALTA"/"FATTO": se cardio, conta come completato (esegue onComplete); altrimenti chiude
+  o.querySelector("#rest-skip").onclick = () => {
+    if (_restOnComplete) {
+      const cb = _restOnComplete;
+      _restOnComplete = null;
+      clearInterval(restTick);
+      const ov = document.getElementById("rest-ov");
+      if (ov) ov.classList.remove("open");
+      ex.restEndsAt = null;
       persist();
-    };
-    o.querySelector("#rest-plus").onclick = () => {
-      ex.restEndsAt += 15000;
-      persist();
-    };
-    o.querySelector("#rest-skip").onclick = closeRest;
-  }
+      cb();
+    } else {
+      closeRest();
+    }
+  };
+
   o.classList.add("open");
   const totalSec = sec;
   clearInterval(restTick);
@@ -846,7 +882,15 @@ function openRest(sec) {
       if (el) el.textContent = "0:00";
       if (ring) ring.style.strokeDashoffset = "615.75";
       beep();
-      closeRest();
+      const cb = _restOnComplete;
+      _restOnComplete = null;
+      clearInterval(restTick);
+      const ov = document.getElementById("rest-ov");
+      if (ov) ov.classList.remove("open");
+      ex.restEndsAt = null;
+      persist();
+      if (cb) cb();
+      else renderExec();
       return;
     }
     if (el)
@@ -863,6 +907,7 @@ function openRest(sec) {
 
 function closeRest() {
   clearInterval(restTick);
+  _restOnComplete = null;
   const o = document.getElementById("rest-ov");
   if (o) o.classList.remove("open");
   ex.restEndsAt = null;
