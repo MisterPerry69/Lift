@@ -74,9 +74,9 @@ async function openSchede() {
   }
   list.innerHTML = html;
 
-  // workout di programma → avvia
+  // workout di programma → apre il DETTAGLIO (consultazione), non avvia
   list.querySelectorAll(".sch-item[data-prog]").forEach((b) => {
-    b.onclick = () => startProgramWorkout(b.dataset.prog, b.dataset.wk);
+    b.onclick = () => openProgramWorkoutDetail(b.dataset.prog, b.dataset.wk);
   });
   // schede singole → dettaglio
   list.querySelectorAll(".sch-item[data-id]").forEach((b) => {
@@ -172,6 +172,91 @@ function _renderSchedaDetail() {
   root.querySelectorAll("[data-bi]").forEach((btn) => {
     btn.onclick = () => _openQuickBlockEdit(+btn.dataset.bi);
   });
+}
+
+/* ---------- DETTAGLIO WORKOUT DI PROGRAMMA (periodizzato, sola lettura) ---------- */
+
+async function openProgramWorkoutDetail(programId, workoutId) {
+  showScreen("scheda-detail");
+  const root = document.getElementById("screen-scheda-detail");
+  root.innerHTML = `<div class="empty-state">Carico…</div>`;
+  let res;
+  try {
+    res = await apiPost("lift_get_program", { id: programId });
+  } catch (e) {
+    root.innerHTML = `<div class="empty-state">Errore: ${escapeHtml(e.message || String(e))}</div>`;
+    return;
+  }
+  const prog = res && res.program;
+  const wk = prog && (prog.workouts || []).find((w) => w.id === workoutId);
+  if (!wk) {
+    root.innerHTML = `<div class="empty-state">Workout non trovato</div>`;
+    return;
+  }
+  _renderProgramWorkoutDetail(prog, wk);
+}
+
+// formatta le serie di un blocco periodizzato per una settimana (riepilogo testuale)
+function _fmtPeriodSets(sets) {
+  // raggruppa reps uguali consecutive: es. [6,6,6,6] -> "4×6"; [7,6,6,6] -> "1×7 3×6"
+  if (!sets || !sets.length) return "";
+  const groups = [];
+  sets.forEach((s) => {
+    const key = String(s.reps) + (s.type && s.type !== "work" ? " " + s.type : "");
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.n++;
+    else groups.push({ key, n: 1, reps: s.reps, type: s.type });
+  });
+  return groups
+    .map((g) => {
+      const t = g.type && g.type !== "work" ? ` ${g.type}` : "";
+      return `${g.n}×${g.reps}${t}`;
+    })
+    .join("  ");
+}
+
+function _renderProgramWorkoutDetail(prog, wk) {
+  const root = document.getElementById("screen-scheda-detail");
+  const wi = (prog.currentWeek || 1) - 1;
+  const blocks = (wk.structure && wk.structure.blocks) || [];
+
+  const blocksHtml = blocks
+    .map((b) => {
+      const ss = b.supersetGroup
+        ? `<span class="sch-ss">SS ${escapeHtml(b.supersetGroup)}</span>`
+        : "";
+      let detail;
+      if (b.kind === "durata") {
+        const w = (b.perWeek && (b.perWeek[wi] || b.perWeek[0])) || {};
+        detail = `${w.durataMin || "?"} min${w.parametri ? " · " + w.parametri : ""}`;
+      } else {
+        const w = (b.perWeek && (b.perWeek[wi] || b.perWeek[0])) || { sets: [] };
+        detail = _fmtPeriodSets(w.sets);
+        if (b.rest) detail += ` · rest ${b.rest}`;
+      }
+      return `
+        <div class="sch-block">
+          <div class="sch-block-main">
+            <div class="sch-block-name">${escapeHtml(b.exerciseName || "?")} ${ss}</div>
+            <div class="sch-block-detail">${escapeHtml(detail)}</div>
+            ${b.note ? `<div class="sch-block-note">${escapeHtml(b.note)}</div>` : ""}
+          </div>
+        </div>`;
+    })
+    .join("");
+
+  root.innerHTML = `
+    <div class="history-head">
+      <button class="icon-btn" id="pwd-back" aria-label="Indietro">${iconSvg("arrow-left")}</button>
+      <div class="sch-detail-name">${escapeHtml(wk.name)}</div>
+    </div>
+    <div class="sch-detail-notes">${escapeHtml(prog.nome)} · Settimana ${prog.currentWeek}/${prog.weeks}</div>
+    ${blocksHtml || '<div class="empty-state">Nessun esercizio</div>'}
+    <button class="save-template-btn" id="pwd-start">${iconSvg("play")} Inizia ${escapeHtml(wk.name)}</button>
+  `;
+
+  document.getElementById("pwd-back").onclick = openSchede;
+  document.getElementById("pwd-start").onclick = () => startProgramWorkout(prog.id, wk.id);
 }
 
 /* ---------- EDIT RAPIDO BLOCCO (al volo) ---------- */
