@@ -693,3 +693,128 @@
 .dur-timer-btn .icon { width: 18px; height: 18px; color: var(--accent); }
 .big-check.dur-done { width: 64px; height: 64px; }
 .big-check.dur-done svg { width: 28px; height: 28px; }
+
+/* ============================================
+   Riferimento allenamento precedente (sotto i bottoni)
+   ============================================ */
+.exec-prevline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  font-size: var(--fs-small);
+  flex-wrap: wrap;
+}
+.pl-prev { color: var(--text-dim); }
+.pl-prev strong { color: var(--text); font-family: var(--font-mono); font-weight: 700; }
+.pl-pr {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--fs-micro);
+  color: var(--gold);
+  background: var(--gold-ghost);
+  border: 1px solid rgba(201, 206, 216, 0.28);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
+
+/* ============================================
+   Timer: Next up + lista esercizi
+   ============================================ */
+.rest-nextup {
+  margin-top: var(--sp-4);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rest-nextup-lab {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: var(--fs-micro);
+  color: var(--accent);
+}
+.rest-nextup-val {
+  font-size: var(--fs-body);
+  color: var(--text);
+  font-weight: 600;
+}
+.rest-overview-btn {
+  margin-top: var(--sp-5);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: var(--radius-pill);
+  padding: var(--sp-2) var(--sp-4);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-small);
+}
+.rest-overview-btn .icon { width: 16px; height: 16px; }
+
+/* ============================================
+   Panoramica: aggiungi esercizio + ripreso
+   ============================================ */
+.ov-resumed {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.6rem;
+  color: #3fae5a;
+  margin-left: var(--sp-2);
+}
+.ov-add {
+  margin: var(--sp-2);
+  padding: var(--sp-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  color: var(--text-dim);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-small);
+  flex-shrink: 0;
+}
+.ov-add:active { border-color: var(--accent); color: var(--accent); }
+
+.addex-search {
+  margin: 0 var(--sp-3) var(--sp-2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  padding: var(--sp-3);
+  outline: none;
+}
+.addex-search:focus { border-color: var(--accent); }
+.addex-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: background var(--t-fast);
+}
+.addex-item:active { background: var(--surface-2); }
+.addex-name { font-weight: 600; font-size: var(--fs-small); }
+.addex-meta {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  flex-shrink: 0;
+}

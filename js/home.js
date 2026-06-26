@@ -217,14 +217,19 @@ function renderProgramSection(programs) {
       </div>
       <ul class="prog-workouts">
         ${p.workouts
-          .map(
-            (w) => `
-          <li class="prog-wk" data-prog="${escapeAttr(p.id)}" data-wk="${escapeAttr(w.id)}">
-            <div class="pw-name">${escapeHtml(w.name)}</div>
-            <div class="pw-meta">${w.exerciseCount} esercizi</div>
+          .map((w) => {
+            const st = w.status || "todo";
+            const stLabel =
+              st === "done" ? "Fatto" : st === "partial" ? "Incompleto" : "";
+            return `
+          <li class="prog-wk prog-wk-${st}" data-prog="${escapeAttr(p.id)}" data-wk="${escapeAttr(w.id)}">
+            <div class="pw-info">
+              <div class="pw-name">${escapeHtml(w.name)}</div>
+              <div class="pw-meta">${w.exerciseCount} esercizi${stLabel ? " · " + stLabel : ""}</div>
+            </div>
             <span class="pw-arrow">${iconSvg("chevron-right")}</span>
-          </li>`
-          )
+          </li>`;
+          })
           .join("")}
       </ul>
     </div>`;

@@ -54,6 +54,16 @@ async function startProgramWorkout(programId, workoutId) {
   if (!wk) return liftAlert("Workout non trovato");
 
   const structure = wk.structure || { blocks: [] };
+  const blocks = structure.blocks || [];
+  // ripresa: blocchi già fatti questa settimana → riparto dal primo non fatto
+  const doneBlocks = (res.doneBlocksByWk && res.doneBlocksByWk[workoutId]) || [];
+  let startBi = 0;
+  if (doneBlocks.length) {
+    const doneSet = new Set(doneBlocks);
+    const firstTodo = blocks.findIndex((_, i) => !doneSet.has(i));
+    startBi = firstTodo >= 0 ? firstTodo : 0;
+  }
+
   ex = {
     templateId: programId + "/" + workoutId,
     templateName: wk.name,
@@ -61,17 +71,25 @@ async function startProgramWorkout(programId, workoutId) {
     programName: prog.nome,
     startedAt: new Date().toISOString(),
     lastInteractionAt: Date.now(),
-    blocks: structure.blocks || [],
+    blocks: blocks,
     weeks: prog.weeks || null,
     currentWeek: prog.currentWeek || 1,
-    bi: 0,
+    bi: startBi,
     si: 0,
     done: [],
-    previousByExercise: {},
+    resumedDoneBlocks: doneBlocks, // blocchi fatti in sessioni precedenti di questa settimana
+    previousByExercise: res.previousByExercise || {},
+    prByExercise: res.prByExercise || {},
   };
   persist();
   acquireWakeLock();
   showScreen("exec");
+  if (doneBlocks.length) {
+    liftAlert(
+      "Riprendi " + wk.name + ": " + doneBlocks.length + " esercizi già fatti questa settimana, riparti da dove avevi lasciato.",
+      "Ripresa allenamento"
+    );
+  }
   renderExec();
 }
 
@@ -259,6 +277,22 @@ function suggestedFor(bi, si) {
   return null;
 }
 
+/** Etichetta "prossimo": esercizio + serie su cui punta lo stato ora (usata nel rest). */
+function nextUpLabel() {
+  const b = ex.blocks[ex.bi];
+  if (!b) return "Fine sessione";
+  if (isDurationBlock(b)) return b.exerciseName;
+  const tot = totalSetsOfBlock(b);
+  return `${b.exerciseName} · serie ${ex.si + 1}/${tot}`;
+}
+
+/** Set corrispondente (per indice) dell'ultima sessione di questo esercizio. */
+function prevSessionSet(ref, si) {
+  const prev = (ex.previousByExercise || {})[ref];
+  if (!prev || !prev.length) return null;
+  return prev[si] || prev[prev.length - 1] || null;
+}
+
 /* ---------- render ---------- */
 
 function renderExec() {
@@ -277,13 +311,26 @@ function renderExec() {
   const targetNum = repsTargetNumeric(set);
   const isWarmup = set.type === "warmup";
   const sug = suggestedFor(ex.bi, ex.si);
+  // PESO: suggerito dal riferimento (ultima volta / serie di oggi). REPS: dal target scheda.
   const sugW = sug ? sug.weight : null;
-  const sugR = sug ? sug.reps : targetNum;
+  const sugR = targetNum;
   const sugLabel = !sug
     ? "Nessun riferimento, parti come ti senti"
     : sug.source === "today"
-    ? "Serie precedente: " + sug.weight + " kg × " + sug.reps
-    : "Ultima volta: " + sug.weight + " kg × " + sug.reps;
+    ? "Serie precedente oggi: " + sug.weight + " kg × " + sug.reps
+    : "Stesso peso dell'ultima volta";
+
+  // Riferimento allenamento precedente, SERIE per SERIE + PR (riga sotto i bottoni)
+  const prevRef = prevSessionSet(exo.ref, ex.si); // {weight,reps} della serie corrispondente
+  const prObj = (ex.prByExercise || {})[exo.ref] || {};
+  const prVal = prObj.heaviest || prObj["1rm"] || 0;
+  let prevHtml = "";
+  if (prevRef && prevRef.weight != null) {
+    prevHtml = `<span class="pl-prev">Ultima volta: <strong>${prevRef.weight}</strong> kg × <strong>${prevRef.reps}</strong></span>`;
+  }
+  if (prVal > 0) {
+    prevHtml += `<span class="pl-pr">PR ${prVal}</span>`;
+  }
 
   // riga settimana + superset
   const weekTag = ex.weeks
@@ -345,6 +392,7 @@ function renderExec() {
             <div class="bn-lab">reps</div>
           </button>
         </div>
+        ${prevHtml ? `<div class="exec-prevline">${prevHtml}</div>` : ""}
       </div>
 
       <div class="exec-secondary">
@@ -508,10 +556,12 @@ function openOverview() {
       const sets = setsForBlock(b);
       const done = doneCountForBlock(bi);
       const isCur = bi === ex.bi;
+      // blocco fatto in una sessione PRECEDENTE di questa settimana (ripresa)
+      const resumed = (ex.resumedDoneBlocks || []).indexOf(bi) >= 0;
       const dots = sets
         .map((s, si) => {
           const cls =
-            bi < ex.bi || (bi === ex.bi && si < ex.si)
+            resumed || bi < ex.bi || (bi === ex.bi && si < ex.si)
               ? "ov-dot-done"
               : isCur && si === ex.si
               ? "ov-dot-cur"
@@ -523,13 +573,16 @@ function openOverview() {
       const ss = b.supersetGroup
         ? `<span class="ov-ss">SS ${escapeHtml(b.supersetGroup)}</span>`
         : "";
+      const resumedTag = resumed
+        ? `<span class="ov-resumed">fatto</span>`
+        : "";
       return `
         <button class="ov-item ${isCur ? "ov-item-cur" : ""}" data-bi="${bi}">
           <div class="ov-item-main">
-            <div class="ov-item-name">${escapeHtml(b.exerciseName)} ${ss}</div>
+            <div class="ov-item-name">${escapeHtml(b.exerciseName)} ${ss}${resumedTag}</div>
             <div class="ov-item-dots">${dots}</div>
           </div>
-          <div class="ov-item-meta">${done}/${sets.length}</div>
+          <div class="ov-item-meta">${resumed ? "✓" : done + "/" + sets.length}</div>
         </button>`;
     })
     .join("");
@@ -541,6 +594,7 @@ function openOverview() {
         <button class="ov-close" id="ov-close">✕</button>
       </div>
       <div class="ov-list">${items}</div>
+      <button class="ov-add" id="ov-add">+ Aggiungi esercizio</button>
     </div>`;
 
   o.querySelector("#ov-close").onclick = () => o.classList.remove("open");
@@ -551,7 +605,94 @@ function openOverview() {
       o.classList.remove("open");
     };
   });
+  o.querySelector("#ov-add").onclick = () => {
+    o.classList.remove("open");
+    openAddExercise();
+  };
   o.classList.add("open");
+}
+
+/**
+ * Aggiunge al volo un esercizio alla sessione corrente (non permanente),
+ * scegliendolo dal catalogo. Utile per recuperare esercizi di un altro workout.
+ */
+function openAddExercise() {
+  const catalog = typeof EXERCISES_CATALOG !== "undefined" ? EXERCISES_CATALOG : [];
+  let m = document.getElementById("addex-modal");
+  if (!m) {
+    m = document.createElement("div");
+    m.id = "addex-modal";
+    m.className = "ov-modal";
+    document.body.appendChild(m);
+    m.addEventListener("click", (e) => {
+      if (e.target === m) m.classList.remove("open");
+    });
+  }
+  const itemsHtml = catalog
+    .map(
+      (e) => `
+      <button class="addex-item" data-id="${escapeHtml(e.id)}">
+        <span class="addex-name">${escapeHtml(e.nome)}</span>
+        <span class="addex-meta">${escapeHtml(e.gruppo || "")}</span>
+      </button>`
+    )
+    .join("");
+  m.innerHTML = `
+    <div class="ov-sheet">
+      <div class="ov-head">
+        <div class="ov-title" style="font-size:1.3rem">Aggiungi esercizio</div>
+        <button class="ov-close" id="addex-close">✕</button>
+      </div>
+      <input class="addex-search" id="addex-search" placeholder="Cerca…" />
+      <div class="ov-list" id="addex-list">${itemsHtml || '<div class="empty-state">Catalogo vuoto</div>'}</div>
+    </div>`;
+  const wire = () => {
+    m.querySelectorAll(".addex-item").forEach((it) => {
+      it.onclick = () => {
+        const exo = catalog.find((x) => x.id === it.dataset.id);
+        if (exo) _appendExerciseToSession(exo);
+        m.classList.remove("open");
+      };
+    });
+  };
+  wire();
+  m.querySelector("#addex-close").onclick = () => m.classList.remove("open");
+  m.querySelector("#addex-search").oninput = (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    const filtered = catalog.filter((x) => x.nome.toLowerCase().includes(q));
+    document.getElementById("addex-list").innerHTML = filtered.length
+      ? filtered
+          .map(
+            (x) => `<button class="addex-item" data-id="${escapeHtml(x.id)}">
+              <span class="addex-name">${escapeHtml(x.nome)}</span>
+              <span class="addex-meta">${escapeHtml(x.gruppo || "")}</span></button>`
+          )
+          .join("")
+      : '<div class="empty-state">Nessun esercizio</div>';
+    wire();
+  };
+  m.classList.add("open");
+}
+
+/** Aggiunge un blocco esercizio (3 serie libere) in coda alla sessione e ci salta. */
+function _appendExerciseToSession(exo) {
+  ex.blocks.push({
+    exerciseRef: "ex:" + exo.id,
+    exerciseName: exo.nome,
+    muscle: exo.gruppo || "",
+    note: "",
+    rest: "1'30\"",
+    supersetGroup: null,
+    // 3 serie senza target (le riempi tu); valido per tutte le settimane
+    perWeek: Array.from({ length: ex.weeks || 1 }, () => ({
+      sets: [{ reps: "", type: "work" }, { reps: "", type: "work" }, { reps: "", type: "work" }],
+    })),
+    _added: true,
+  });
+  ex.bi = ex.blocks.length - 1;
+  ex.si = 0;
+  persist();
+  renderExec();
 }
 
 /** Salta all'inizio di un esercizio (per rifare/anticipare). */
@@ -765,7 +906,7 @@ function advance(noRest) {
   }
   // rest: solo se la scheda lo prevede e non era uno skip
   if (!noRest && restSec > 0) {
-    openRest(restSec);
+    openRest(restSec, { hint: nextUpLabel() });
   } else {
     renderExec();
   }
@@ -836,8 +977,11 @@ function openRest(sec, opts) {
         </svg>
         <div class="rest-circle-inner">
           <div class="rest-time" id="rest-num">0:00</div>
-          <div class="rest-next-hint">${escapeHtml(hint)}</div>
         </div>
+      </div>
+      <div class="rest-nextup">
+        <span class="rest-nextup-lab">Next up</span>
+        <span class="rest-nextup-val">${escapeHtml(hint)}</span>
       </div>
       <div class="rest-actions">
         <button class="rest-btn" id="rest-minus">−15s</button>
@@ -845,8 +989,10 @@ function openRest(sec, opts) {
           _restOnComplete ? "FATTO" : "SALTA"
         }</button>
         <button class="rest-btn" id="rest-plus">+15s</button>
-      </div>`;
+      </div>
+      <button class="rest-overview-btn" id="rest-overview">${iconSvg("list")} Lista esercizi</button>`;
   document.body.appendChild(o);
+  o.querySelector("#rest-overview").onclick = openOverview;
   o.querySelector("#rest-minus").onclick = () => {
     ex.restEndsAt -= 15000;
     persist();
@@ -991,6 +1137,12 @@ async function finalizeSession(state, autoTerminated) {
       note: d.note,
     });
   });
+  // completato = ogni blocco ha almeno una serie registrata (done con quel bi)
+  const blocks = state.blocks || [];
+  const doneBi = new Set((state.done || []).map((d) => d.bi));
+  const completedExercises = blocks.filter((_, bi) => doneBi.has(bi)).length;
+  const isCompleted = blocks.length > 0 && completedExercises >= blocks.length;
+
   const payload = {
     templateId: state.templateId,
     templateName: state.templateName,
@@ -1000,6 +1152,12 @@ async function finalizeSession(state, autoTerminated) {
     energy: state.energy != null ? state.energy : "",
     sessionNotes: state.sessionNotes || "",
     data: { exercises: Object.values(exercisesMap) },
+    // contesto programma (per stato settimana + ripresa)
+    programId: state.programId || "",
+    workoutId: (state.templateId || "").split("/")[1] || "",
+    week: state.currentWeek || "",
+    completed: isCompleted ? "true" : "false",
+    doneBlocks: [...doneBi].join(","), // indici blocchi fatti (per ripresa)
   };
   return apiPost("lift_save_session", payload);
 }

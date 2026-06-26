@@ -381,8 +381,11 @@
   transition: transform var(--t-fast), border-color var(--t-fast);
 }
 .prog-wk:active { transform: scale(0.985); border-color: var(--accent); }
+/* stato workout nella settimana corrente */
+.prog-wk-done { border-color: #3fae5a; border-width: 2px; }
+.prog-wk-partial { border-color: #d98a2b; border-width: 2px; }
+.pw-info { flex: 1; min-width: 0; }
 .pw-name {
-  flex: 1;
   font-weight: 700;
   font-size: 1.05rem;
 }
