@@ -34,6 +34,10 @@
   --gold: #c9ced8;
   --gold-ghost: rgba(201, 206, 216, 0.10);
 
+  /* --- Oro vero per i PERSONAL RECORD (giallo caldo) --- */
+  --pr: #e8b53a;
+  --pr-ghost: rgba(232, 181, 58, 0.13);
+
   /* --- Testo che va SOPRA l'accent rosso (pieno) --- */
   --on-accent: #f4eded;
 

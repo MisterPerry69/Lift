@@ -713,11 +713,12 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: var(--fs-micro);
-  color: var(--gold);
-  background: var(--gold-ghost);
-  border: 1px solid rgba(201, 206, 216, 0.28);
+  color: var(--pr);
+  background: var(--pr-ghost);
+  border: 1px solid rgba(232, 181, 58, 0.35);
   border-radius: var(--radius-pill);
   padding: 2px 8px;
+  font-weight: 700;
 }
 
 /* ============================================

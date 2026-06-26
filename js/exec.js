@@ -259,20 +259,20 @@ function supersetPartners(b) {
 function suggestedFor(bi, si) {
   const b = ex.blocks[bi];
   const exo = curExerciseOfBlock(b);
-  // 1. serie precedente di oggi sullo stesso esercizio
+  const sets = setsForBlock(b);
+  const curIsWarmup = (sets[si] && sets[si].type) === "warmup";
+
+  // 1. serie precedente di oggi sullo stesso esercizio, stesso "gruppo" (warmup/lavoro)
   for (let i = ex.done.length - 1; i >= 0; i--) {
     const d = ex.done[i];
-    if (d.exerciseRef === exo.ref && d.type !== "skipped" && d.weight != null) {
-      return { weight: d.weight, reps: d.reps, source: "today" };
-    }
+    if (d.exerciseRef !== exo.ref || d.type === "skipped" || d.weight == null) continue;
+    if ((d.type === "warmup") !== curIsWarmup) continue; // non mischiare warm-up e lavoro
+    return { weight: d.weight, reps: d.reps, source: "today" };
   }
-  // 2/3. sessione precedente
-  const prev = (ex.previousByExercise || {})[exo.ref];
-  if (prev && prev.length > 0) {
-    const set = prev[si] || prev[0];
-    if (set && set.weight != null) {
-      return { weight: set.weight, reps: set.reps, source: "previous" };
-    }
+  // 2. sessione precedente, allineata per tipo (vedi prevSessionSet)
+  const set = prevSessionSet(exo.ref, si);
+  if (set && set.weight != null) {
+    return { weight: set.weight, reps: set.reps, source: "previous" };
   }
   return null;
 }
@@ -286,11 +286,34 @@ function nextUpLabel() {
   return `${b.exerciseName} · serie ${ex.si + 1}/${tot}`;
 }
 
-/** Set corrispondente (per indice) dell'ultima sessione di questo esercizio. */
+/**
+ * Riferimento dall'ultima sessione per la serie corrente, allineato per TIPO:
+ * - la N-esima serie di LAVORO di oggi → N-esima serie di lavoro dell'ultima volta
+ * - la N-esima serie di WARM-UP di oggi → N-esima warm-up dell'ultima volta
+ * Così le warm-up non sfasano il confronto (es. oggi 3×6 ≠ warm-up del passato).
+ */
 function prevSessionSet(ref, si) {
   const prev = (ex.previousByExercise || {})[ref];
   if (!prev || !prev.length) return null;
-  return prev[si] || prev[prev.length - 1] || null;
+
+  // tipo della serie corrente + il suo indice DENTRO le serie dello stesso "gruppo"
+  const sets = setsForBlock(curBlock());
+  const curType = (sets[si] && sets[si].type) || "work";
+  const curIsWarmup = curType === "warmup";
+  let rankInGroup = 0;
+  for (let k = 0; k < si; k++) {
+    const t = (sets[k] && sets[k].type) || "work";
+    if (curIsWarmup === (t === "warmup")) rankInGroup++;
+  }
+
+  // serie precedenti dello stesso gruppo (warmup vs lavoro)
+  const sameGroup = prev.filter((p) => (p.type === "warmup") === curIsWarmup);
+  if (!sameGroup.length) {
+    // nessuna corrispondenza di tipo: ripiego sull'ultima serie di lavoro precedente
+    const work = prev.filter((p) => p.type !== "warmup");
+    return work[work.length - 1] || prev[prev.length - 1] || null;
+  }
+  return sameGroup[rankInGroup] || sameGroup[sameGroup.length - 1] || null;
 }
 
 /* ---------- render ---------- */

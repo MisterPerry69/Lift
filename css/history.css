@@ -192,10 +192,11 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: var(--fs-micro);
-  color: var(--gold);
-  background: var(--gold-ghost);
+  color: var(--pr);
+  background: var(--pr-ghost);
   border-radius: var(--radius-pill);
   padding: 2px 8px;
+  font-weight: 700;
 }
 .sd-ex-rows {
   display: flex;
