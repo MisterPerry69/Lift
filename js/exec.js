@@ -1158,6 +1158,9 @@ async function finalizeSession(state, autoTerminated) {
       weight: d.weight,
       reps: d.reps,
       note: d.note,
+      // esercizi a durata (cardio): minuti + parametri
+      durataMin: d.durataMin != null ? d.durataMin : "",
+      parametri: d.parametri || "",
     });
   });
   // completato = ogni blocco ha almeno una serie registrata (done con quel bi)

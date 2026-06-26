@@ -139,6 +139,16 @@ function _renderSessionDetail(s, sets, prs) {
           if (st.setType === "skipped") {
             return `<div class="sd-row sd-row-skip"><span class="sd-row-n">${i + 1}</span><span class="sd-row-val">saltata</span></div>`;
           }
+          // esercizio a durata (cardio): minuti + parametri invece di kg × reps
+          if (st.setType === "duration") {
+            const min = st.durataMin !== "" && st.durataMin != null ? st.durataMin : "—";
+            const par = st.parametri ? " · " + escapeHtml(st.parametri) : "";
+            return `
+              <div class="sd-row">
+                <span class="sd-row-n">${i + 1}</span>
+                <span class="sd-row-val"><strong>${min}</strong> min${par}</span>
+              </div>`;
+          }
           const w = st.weight !== "" ? st.weight : "—";
           const r = st.reps !== "" ? st.reps : "—";
           const typeTag =
