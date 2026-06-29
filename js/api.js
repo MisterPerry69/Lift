@@ -125,6 +125,8 @@ const _INVALIDATES_BOOTSTRAP = {
   lift_log_weight: true,
   lift_save_custom_exercise: true,
   lift_edit_session: true,
+  lift_import_programma: true,
+  lift_set_program_week: true,
 };
 
 function mockResponse(action) {

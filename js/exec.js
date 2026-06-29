@@ -561,6 +561,41 @@ function doneCountForBlock(bi) {
   return ex.done.filter((d) => d.bi === bi).length;
 }
 
+/** Riepilogo target della settimana per un blocco: "4×6", "3×8-12", "12 min". */
+function targetSummaryForBlock(b) {
+  if (isDurationBlock(b)) {
+    const d = durationForBlock(b);
+    return d.durataMin + " min" + (d.parametri ? " · " + d.parametri : "");
+  }
+  const sets = setsForBlock(b).filter((s) => s.type !== "warmup");
+  if (!sets.length) return "";
+  // raggruppa reps uguali consecutive
+  const groups = [];
+  sets.forEach((s) => {
+    const key = String(s.reps) + (s.type && s.type !== "work" ? " " + s.type : "");
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.n++;
+    else groups.push({ key, n: 1, reps: s.reps, type: s.type });
+  });
+  return groups
+    .map((g) => `${g.n}×${g.reps}${g.type && g.type !== "work" ? " " + g.type : ""}`)
+    .join("  ");
+}
+
+/** Cosa è stato fatto oggi su un blocco: "45×6 · 45×6" (o "12 min" per cardio). */
+function doneSummaryForBlock(bi) {
+  const dn = ex.done.filter((d) => d.bi === bi && d.type !== "skipped");
+  if (!dn.length) return "";
+  return dn
+    .map((d) => {
+      if (d.type === "duration") return (d.durataMin || "?") + " min";
+      const w = d.weight != null ? d.weight : "?";
+      const r = d.reps != null ? d.reps : "?";
+      return w + "×" + r;
+    })
+    .join(" · ");
+}
+
 function openOverview() {
   let o = document.getElementById("ov-modal");
   if (!o) {
@@ -599,10 +634,14 @@ function openOverview() {
       const resumedTag = resumed
         ? `<span class="ov-resumed">fatto</span>`
         : "";
+      const target = targetSummaryForBlock(b);
+      const doneSum = doneSummaryForBlock(bi);
       return `
         <button class="ov-item ${isCur ? "ov-item-cur" : ""}" data-bi="${bi}">
           <div class="ov-item-main">
             <div class="ov-item-name">${escapeHtml(b.exerciseName)} ${ss}${resumedTag}</div>
+            ${target ? `<div class="ov-item-target">${escapeHtml(target)}</div>` : ""}
+            ${doneSum ? `<div class="ov-item-done">✓ ${escapeHtml(doneSum)}</div>` : ""}
             <div class="ov-item-dots">${dots}</div>
           </div>
           <div class="ov-item-meta">${resumed ? "✓" : done + "/" + sets.length}</div>

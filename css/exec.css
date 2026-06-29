@@ -247,11 +247,9 @@
 .ov-item-main { min-width: 0; flex: 1; }
 .ov-item-name {
   font-weight: 600;
-  font-size: var(--fs-small);
+  font-size: var(--fs-body);
   color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
 }
 .ov-ss {
   font-family: var(--font-cond);
@@ -819,3 +817,19 @@
   color: var(--text-dim-2);
   flex-shrink: 0;
 }
+
+/* Lista esercizi più ricca: target + fatto oggi */
+.ov-item { align-items: flex-start; padding: var(--sp-4) var(--sp-3); }
+.ov-item-target {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  margin-top: 3px;
+}
+.ov-item-done {
+  font-size: var(--fs-small);
+  color: #3fae5a;
+  margin-top: 3px;
+  font-weight: 600;
+}
+.ov-item-dots { margin-top: var(--sp-2); }
