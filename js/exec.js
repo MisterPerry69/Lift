@@ -320,12 +320,19 @@ function prevSessionSet(ref, si) {
 
 function renderExec() {
   const root = document.getElementById("screen-exec");
+  // niente chiusura automatica: se bi è fuori range, riporto sull'ultimo blocco
   if (ex.bi >= ex.blocks.length) {
-    return openFinish();
+    const inc = firstIncompleteBlock(0);
+    ex.bi = inc >= 0 ? inc : ex.blocks.length - 1;
+    ex.si = 0;
   }
   const b = curBlock();
   if (isDurationBlock(b)) {
     return renderExecDuration(b);
+  }
+  // blocco già completato e nessuna serie residua da fare → vista "completato"
+  if (isBlockComplete(ex.bi) && ex.si >= totalSetsOfBlock(b)) {
+    return renderExecCompleted(b);
   }
   const exo = curExerciseOfBlock(b);
   const totSets = totalSetsOfBlock(b);
@@ -452,6 +459,69 @@ function addWarmupSet() {
   // posizione così l'utente compila prima l'avvicinamento appena creato.
   persist();
   renderExec();
+}
+
+/* ---------- vista blocco COMPLETATO (entri in un esercizio già fatto) ---------- */
+
+function renderExecCompleted(b) {
+  const root = document.getElementById("screen-exec");
+  const exo = curExerciseOfBlock(b);
+  const weekTag = ex.weeks
+    ? `<span class="ep-week">Settimana ${ex.currentWeek}/${ex.weeks}</span>`
+    : "";
+  const doneSum = doneSummaryForBlock(ex.bi);
+  const nextInc = firstIncompleteBlock(ex.bi);
+  const nextName =
+    nextInc >= 0 && nextInc !== ex.bi ? ex.blocks[nextInc].exerciseName : "";
+
+  root.innerHTML = `
+    <div class="exec-header">
+      <div>
+        <div class="eh-name">${escapeHtml(ex.templateName)}</div>
+        <div class="eh-timer" id="eh-timer">00:00:00</div>
+      </div>
+      <div class="exec-header-actions">
+        <button class="eh-overview" id="ex-overview" title="Panoramica scheda">${iconSvg("list")}</button>
+        <button class="eh-discard" id="ex-discard" title="Scarta sessione">✕</button>
+        <button class="eh-end" id="ex-end">TERMINA</button>
+      </div>
+    </div>
+    <div class="exec-body">
+      <div class="exec-top">
+        <div class="exec-progress">Esercizio ${ex.bi + 1} / ${ex.blocks.length} ${weekTag}</div>
+        <div class="exec-exname">${escapeHtml(exo.name)}</div>
+      </div>
+
+      <div class="exec-focus">
+        <div class="done-badge">${iconSvg("check")} Completato</div>
+        ${doneSum ? `<div class="done-recap">${escapeHtml(doneSum)}</div>` : ""}
+        <button class="dur-timer-btn" id="ex-add-series">+ Aggiungi serie</button>
+      </div>
+
+      <div class="exec-secondary">
+        ${
+          nextName
+            ? `<button class="exec-skip exec-goto-next" id="ex-goto-next">Vai a ${escapeHtml(nextName)} →</button>`
+            : `<span class="exec-alldone">Tutti gli esercizi completati · premi TERMINA</span>`
+        }
+      </div>
+    </div>
+  `;
+
+  startSessionTimer();
+  document.getElementById("ex-end").onclick = confirmEnd;
+  document.getElementById("ex-discard").onclick = confirmDiscard;
+  document.getElementById("ex-overview").onclick = openOverview;
+  document.getElementById("ex-add-series").onclick = () => {
+    // aggiunge UNA serie extra (di lavoro) a questo blocco e ci entra
+    if (!b._extraSets) b._extraSets = [];
+    b._extraSets.push({ reps: "", type: "work" });
+    ex.si = totalSetsOfBlock(b) - 1; // la nuova serie
+    persist();
+    renderExec();
+  };
+  const gotoBtn = document.getElementById("ex-goto-next");
+  if (gotoBtn) gotoBtn.onclick = () => jumpToBlock(nextInc);
 }
 
 /* ---------- esercizio a DURATA (cardio a tempo) ---------- */
@@ -757,11 +827,42 @@ function _appendExerciseToSession(exo) {
   renderExec();
 }
 
-/** Salta all'inizio di un esercizio (per rifare/anticipare). */
+/**
+ * Un blocco è COMPLETATO se ha registrato tutte le sue serie di lavoro
+ * (done non-skipped >= n. serie previste), oppure è tra i blocchi ripresi da
+ * una sessione precedente della stessa settimana.
+ */
+function isBlockComplete(bi) {
+  if ((ex.resumedDoneBlocks || []).indexOf(bi) >= 0) return true;
+  const b = ex.blocks[bi];
+  if (!b) return false;
+  const needed = totalSetsOfBlock(b);
+  const doneOk = ex.done.filter(
+    (d) => d.bi === bi && d.type !== "skipped"
+  ).length;
+  return doneOk >= needed;
+}
+
+/**
+ * Trova il primo blocco NON completato: prima a valle di `fromBi`, poi (per
+ * recuperare i saltati) dall'inizio. Ritorna -1 se sono tutti completati.
+ */
+function firstIncompleteBlock(fromBi) {
+  for (let i = fromBi; i < ex.blocks.length; i++) {
+    if (!isBlockComplete(i)) return i;
+  }
+  for (let i = 0; i < fromBi; i++) {
+    if (!isBlockComplete(i)) return i;
+  }
+  return -1;
+}
+
+/** Salta a un esercizio dalla lista. Se è già completato, mostra la vista
+ *  "completato" (niente serie vuota); altrimenti parte dalla prima serie. */
 function jumpToBlock(bi) {
   if (bi < 0 || bi >= ex.blocks.length) return;
   ex.bi = bi;
-  ex.si = 0;
+  ex.si = isBlockComplete(bi) ? totalSetsOfBlock(ex.blocks[bi]) : 0;
   persist();
   closeRest();
   renderExec();
@@ -962,10 +1063,24 @@ function advance(noRest) {
     }
   }
 
-  persist();
-  if (ex.bi >= ex.blocks.length) {
-    return openFinish();
+  // NIENTE chiusura automatica: se siamo usciti dai blocchi (o il blocco corrente
+  // è già completo), vai al primo esercizio NON completato (recupera i saltati).
+  // Se sono tutti completati, resta sull'ultimo blocco: si chiude solo con TERMINA.
+  if (ex.bi >= ex.blocks.length || isBlockComplete(ex.bi)) {
+    const nextInc = firstIncompleteBlock(
+      ex.bi >= ex.blocks.length ? 0 : ex.bi
+    );
+    if (nextInc >= 0) {
+      ex.bi = nextInc;
+      ex.si = 0;
+    } else {
+      // tutto completato: resto sull'ultimo blocco valido con la vista "completato"
+      ex.bi = Math.min(ex.bi, ex.blocks.length - 1);
+      ex.si = totalSetsOfBlock(curBlock());
+    }
   }
+
+  persist();
   // rest: solo se la scheda lo prevede e non era uno skip
   if (!noRest && restSec > 0) {
     openRest(restSec, { hint: nextUpLabel() });
@@ -987,12 +1102,11 @@ function showUndo() {
     document.body.appendChild(t);
   }
   t.querySelector("#undo-btn").onclick = () => {
-    ex.done.pop();
-    // torno indietro di una serie
-    ex.si--;
-    if (ex.si < 0) {
-      ex.bi = Math.max(0, ex.bi - 1);
-      ex.si = totalSetsOfBlock(curBlock()) - 1;
+    // rimuovo l'ultimo done e torno ESATTAMENTE su quel blocco/serie (superset-safe).
+    const removed = ex.done.pop();
+    if (removed) {
+      ex.bi = removed.bi != null ? removed.bi : ex.bi;
+      ex.si = removed.si != null ? removed.si : ex.si;
     }
     persist();
     t.classList.remove("show");

@@ -833,3 +833,34 @@
   font-weight: 600;
 }
 .ov-item-dots { margin-top: var(--sp-2); }
+
+/* Vista blocco completato */
+.done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--fs-body);
+  color: #3fae5a;
+  margin-bottom: var(--sp-3);
+}
+.done-badge .icon { width: 22px; height: 22px; }
+.done-recap {
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  color: var(--text-dim);
+  margin-bottom: var(--sp-5);
+}
+.exec-goto-next {
+  color: var(--accent) !important;
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.exec-alldone {
+  font-size: var(--fs-small);
+  color: var(--text-dim-2);
+  text-align: center;
+}
