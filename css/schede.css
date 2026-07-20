@@ -154,3 +154,18 @@
   height: 18px;
   stroke-width: 1.75;
 }
+
+/* Form nuovo esercizio */
+.newex-lab {
+  display: block;
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  margin: var(--sp-3) 0 var(--sp-1);
+}
+.newex-field {
+  width: 100%;
+  margin: 0;
+}

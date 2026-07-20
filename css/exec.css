@@ -864,3 +864,58 @@
   color: var(--text-dim-2);
   text-align: center;
 }
+
+/* ============================================
+   Cardio v2: inserimento minuti reali (no timer)
+   ============================================ */
+.dur-target {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-small);
+  color: var(--text-dim-2);
+  margin-bottom: var(--sp-5);
+}
+.dur-input-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-5);
+}
+.dur-step {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  font-size: 2rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: border-color var(--t-fast), transform var(--t-fast);
+}
+.dur-step:active { transform: scale(0.92); border-color: var(--accent); }
+.dur-value {
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dur-value #dur-min {
+  font-family: var(--font-mono);
+  font-size: 3.4rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.dur-unit {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  margin-top: var(--sp-1);
+}
+.big-check.dur-confirm { width: 76px; height: 76px; }

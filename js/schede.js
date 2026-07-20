@@ -221,7 +221,7 @@ function _renderProgramWorkoutDetail(prog, wk) {
   const blocks = (wk.structure && wk.structure.blocks) || [];
 
   const blocksHtml = blocks
-    .map((b) => {
+    .map((b, bi) => {
       const ss = b.supersetGroup
         ? `<span class="sch-ss">SS ${escapeHtml(b.supersetGroup)}</span>`
         : "";
@@ -241,6 +241,9 @@ function _renderProgramWorkoutDetail(prog, wk) {
             <div class="sch-block-detail">${escapeHtml(detail)}</div>
             ${b.note ? `<div class="sch-block-note">${escapeHtml(b.note)}</div>` : ""}
           </div>
+          <button class="sch-block-edit" data-swap="${bi}" aria-label="Sostituisci esercizio">
+            ${iconSvg("edit")}
+          </button>
         </div>`;
     })
     .join("");
@@ -257,6 +260,180 @@ function _renderProgramWorkoutDetail(prog, wk) {
 
   document.getElementById("pwd-back").onclick = openSchede;
   document.getElementById("pwd-start").onclick = () => startProgramWorkout(prog.id, wk.id);
+  root.querySelectorAll("[data-swap]").forEach((btn) => {
+    btn.onclick = () =>
+      openSwapExercise(prog, wk, parseInt(btn.dataset.swap, 10));
+  });
+}
+
+/* ---------- SOSTITUISCI ESERCIZIO (in un workout di programma) ---------- */
+
+function openSwapExercise(prog, wk, blockIndex) {
+  const blocks = (wk.structure && wk.structure.blocks) || [];
+  const b = blocks[blockIndex];
+  if (!b) return;
+  const catalog = typeof EXERCISES_CATALOG !== "undefined" ? EXERCISES_CATALOG : [];
+
+  let m = document.getElementById("swap-modal");
+  if (!m) {
+    m = document.createElement("div");
+    m.id = "swap-modal";
+    m.className = "ov-modal";
+    document.body.appendChild(m);
+    m.addEventListener("click", (e) => {
+      if (e.target === m) m.classList.remove("open");
+    });
+  }
+
+  const renderList = (q) => {
+    const query = (q || "").trim().toLowerCase();
+    const filtered = catalog.filter(
+      (e) => !query || String(e.nome).toLowerCase().includes(query)
+    );
+    return filtered.length
+      ? filtered
+          .map(
+            (e) => `
+        <button class="addex-item" data-id="${escapeAttr(e.id)}">
+          <span class="addex-name">${escapeHtml(e.nome)}</span>
+          <span class="addex-meta">${escapeHtml(e.gruppo || "")}</span>
+        </button>`
+          )
+          .join("")
+      : `<div class="empty-state">Nessun esercizio. Creane uno nuovo qui sotto.</div>`;
+  };
+
+  m.innerHTML = `
+    <div class="ov-sheet">
+      <div class="ov-head">
+        <div class="ov-title" style="font-size:1.2rem">Sostituisci<br><span class="ov-sub">${escapeHtml(
+          b.exerciseName || ""
+        )}</span></div>
+        <button class="ov-close" id="swap-close">✕</button>
+      </div>
+      <input class="addex-search" id="swap-search" placeholder="Cerca esercizio…" />
+      <div class="ov-list" id="swap-list">${renderList("")}</div>
+      <button class="ov-add" id="swap-new">+ Nuovo esercizio nel catalogo</button>
+    </div>`;
+
+  const wire = () => {
+    m.querySelectorAll(".addex-item").forEach((it) => {
+      it.onclick = async () => {
+        await _doSwap(prog, wk, blockIndex, it.dataset.id);
+        m.classList.remove("open");
+      };
+    });
+  };
+  wire();
+  m.querySelector("#swap-close").onclick = () => m.classList.remove("open");
+  m.querySelector("#swap-search").oninput = (e) => {
+    document.getElementById("swap-list").innerHTML = renderList(e.target.value);
+    wire();
+  };
+  m.querySelector("#swap-new").onclick = async () => {
+    const created = await openNewExerciseForm();
+    if (created) {
+      await _doSwap(prog, wk, blockIndex, created.id);
+      m.classList.remove("open");
+    }
+  };
+  m.classList.add("open");
+}
+
+async function _doSwap(prog, wk, blockIndex, exerciseId) {
+  try {
+    const res = await apiPost("lift_replace_exercise", {
+      programId: prog.id,
+      workoutId: wk.id,
+      blockIndex: blockIndex,
+      exerciseId: exerciseId,
+    });
+    if (!res || res.status !== "OK") {
+      return liftAlert((res && res.message) || "Errore sostituzione", "Errore");
+    }
+    // ricarico il dettaglio con i dati aggiornati
+    await openProgramWorkoutDetail(prog.id, wk.id);
+  } catch (e) {
+    liftAlert("Errore: " + (e.message || e), "Errore");
+  }
+}
+
+/**
+ * Form per creare un nuovo esercizio nel catalogo.
+ * Ritorna l'esercizio creato ({id, nome, ...}) o null se annullato.
+ */
+function openNewExerciseForm() {
+  return new Promise((resolve) => {
+    let d = document.getElementById("newex-dlg");
+    if (!d) {
+      d = document.createElement("div");
+      d.id = "newex-dlg";
+      d.className = "dlg";
+      document.body.appendChild(d);
+    }
+    const gruppi = typeof COMMON_MUSCLES !== "undefined" ? COMMON_MUSCLES : [];
+    d.innerHTML = `
+      <div class="dlg-box dlg-wide">
+        <div class="dlg-title">Nuovo esercizio</div>
+        <label class="newex-lab">Nome</label>
+        <input class="addex-search newex-field" id="newex-nome" placeholder="Es. Pulley alto presa stretta" />
+        <label class="newex-lab">Gruppo</label>
+        <select class="trend-picker newex-field" id="newex-gruppo">
+          ${gruppi.map((g) => `<option value="${escapeAttr(g)}">${escapeHtml(g)}</option>`).join("")}
+        </select>
+        <label class="newex-lab">Attrezzo</label>
+        <select class="trend-picker newex-field" id="newex-attrezzo">
+          ${["macchina", "cavi", "manubri", "bilanciere", "smith", "corpo libero", "altro"]
+            .map((a) => `<option value="${a}">${a}</option>`)
+            .join("")}
+        </select>
+        <div class="dlg-actions dlg-actions-top">
+          <button class="dlg-btn dlg-btn-cancel" id="newex-cancel">Annulla</button>
+          <button class="dlg-btn dlg-btn-ok" id="newex-ok">Crea</button>
+        </div>
+      </div>`;
+    d.classList.add("show");
+
+    const close = (val) => {
+      d.classList.remove("show");
+      resolve(val);
+    };
+    d.querySelector("#newex-cancel").onclick = () => close(null);
+    d.querySelector("#newex-ok").onclick = async () => {
+      const nome = d.querySelector("#newex-nome").value.trim();
+      if (!nome) return liftAlert("Dai un nome all'esercizio");
+      const gruppo = d.querySelector("#newex-gruppo").value;
+      const attrezzo = d.querySelector("#newex-attrezzo").value;
+      try {
+        const res = await apiPost("lift_save_exercise", {
+          nome: nome,
+          gruppo: gruppo,
+          attrezzo: attrezzo,
+          // manubri = carico doppio (peso per-manubrio ×2 nel volume)
+          caricoConteggio: attrezzo === "manubri" ? "doppio" : "singolo",
+          unilaterale: "no",
+        });
+        if (!res || res.status !== "OK") {
+          liftAlert((res && res.message) || "Errore creazione", "Errore");
+          return close(null);
+        }
+        // aggiorno il catalogo in memoria
+        const nuovo = {
+          id: res.id,
+          nome: nome,
+          gruppo: gruppo,
+          attrezzo: attrezzo,
+          caricoConteggio: attrezzo === "manubri" ? "doppio" : "singolo",
+          unilaterale: "no",
+        };
+        if (typeof EXERCISES_CATALOG !== "undefined") EXERCISES_CATALOG.push(nuovo);
+        close(nuovo);
+      } catch (e) {
+        liftAlert("Errore: " + (e.message || e), "Errore");
+        close(null);
+      }
+    };
+  });
 }
 
 /* ---------- EDIT RAPIDO BLOCCO (al volo) ---------- */

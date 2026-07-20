@@ -559,12 +559,18 @@ function renderExecDuration(b) {
       </div>
 
       <div class="exec-focus">
-        <div class="dur-params">
-          <div class="dur-minutes"><strong>${d.durataMin}</strong> min</div>
-          ${d.parametri ? `<div class="dur-extra">${escapeHtml(d.parametri)}</div>` : ""}
+        <div class="dur-target">Da scheda: ${d.durataMin} min${
+    d.parametri ? " · " + escapeHtml(d.parametri) : ""
+  }</div>
+        <div class="dur-input-row">
+          <button class="dur-step" id="dur-minus" aria-label="Meno">−</button>
+          <div class="dur-value">
+            <span id="dur-min">${d.durataMin}</span>
+            <span class="dur-unit">min</span>
+          </div>
+          <button class="dur-step" id="dur-plus" aria-label="Più">+</button>
         </div>
-        <button class="dur-timer-btn" id="ex-dur-timer">${iconSvg("play")} Avvia timer ${d.durataMin}′</button>
-        <button class="dur-done-btn" id="ex-dur-done">${iconSvg("check")} Segna come fatto</button>
+        <button class="big-check dur-confirm" id="ex-dur-done" aria-label="Conferma">${iconSvg("check")}</button>
       </div>
 
       <div class="exec-secondary">
@@ -577,28 +583,31 @@ function renderExecDuration(b) {
   document.getElementById("ex-end").onclick = confirmEnd;
   document.getElementById("ex-discard").onclick = confirmDiscard;
   document.getElementById("ex-overview").onclick = openOverview;
-  // Avvia timer: parte il cardio; a fine timer (o "FATTO") registra e avanza.
-  document.getElementById("ex-dur-timer").onclick = () =>
-    openRest(d.durataMin * 60, {
-      label: "Cardio",
-      hint: escapeHtml(exo.name),
-      onComplete: confirmDuration,
-    });
-  // "Segna come fatto" senza usare il timer (se l'hai fatto sulla macchina)
-  document.getElementById("ex-dur-done").onclick = confirmDuration;
+  // minuti reali: +/- (min 1). Il valore parte da quello di scheda.
+  const minEl = document.getElementById("dur-min");
+  const stepMin = (delta) => {
+    const cur = parseInt(minEl.textContent, 10) || 0;
+    minEl.textContent = Math.max(1, cur + delta);
+  };
+  document.getElementById("dur-minus").onclick = () => stepMin(-1);
+  document.getElementById("dur-plus").onclick = () => stepMin(1);
+  document.getElementById("ex-dur-done").onclick = () =>
+    confirmDuration(parseInt(minEl.textContent, 10) || d.durataMin);
   document.getElementById("ex-skip").onclick = skipDuration;
 }
 
-function confirmDuration() {
+/** Registra il cardio con i minuti REALI fatti (default: quelli di scheda). */
+function confirmDuration(minutiFatti) {
   const b = curBlock();
   const exo = curExerciseOfBlock(b);
   const d = durationForBlock(b);
+  const min = minutiFatti != null ? minutiFatti : d.durataMin;
   ex.done.push({
     exerciseRef: exo.ref,
     exerciseName: exo.name,
     muscleGroup: exo.muscle,
     type: "duration",
-    durataMin: d.durataMin,
+    durataMin: min,
     parametri: d.parametri,
     weight: null,
     reps: null,
