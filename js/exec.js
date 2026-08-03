@@ -427,6 +427,7 @@ function renderExec() {
 
       <div class="exec-secondary">
         <button class="exec-add-warmup" id="ex-add-warmup">+ avvicinamento</button>
+        <button class="exec-note-btn ${pendingNote(ex.bi) ? "has-note" : ""}" id="ex-note">${iconSvg("edit")} Nota</button>
         <button class="exec-skip" id="ex-skip">Salta serie</button>
       </div>
     </div>
@@ -437,12 +438,53 @@ function renderExec() {
   document.getElementById("ex-discard").onclick = confirmDiscard;
   document.getElementById("ex-overview").onclick = openOverview;
   document.getElementById("ex-add-warmup").onclick = addWarmupSet;
+  document.getElementById("ex-note").onclick = () => openNoteEditor(ex.bi);
   document.getElementById("ex-weight").onclick = () =>
     openNum("weight", parseFloat(document.getElementById("exw").textContent) || 0);
   document.getElementById("ex-reps").onclick = () =>
     openNum("reps", parseInt(document.getElementById("exr").textContent, 10) || targetNum);
   document.getElementById("ex-check").onclick = confirmSet;
   document.getElementById("ex-skip").onclick = skipSet;
+}
+
+/* ---------- note per esercizio (durante l'allenamento) ---------- */
+
+/** Nota "in attesa" per il blocco bi (verrà salvata sulla prossima serie). */
+function pendingNote(bi) {
+  return (ex._pendingNotes && ex._pendingNotes[bi]) || "";
+}
+
+function openNoteEditor(bi) {
+  let m = document.getElementById("note-modal");
+  if (!m) {
+    m = document.createElement("div");
+    m.id = "note-modal";
+    m.className = "dlg";
+    document.body.appendChild(m);
+    m.addEventListener("click", (e) => {
+      if (e.target === m) m.classList.remove("show");
+    });
+  }
+  const cur = pendingNote(bi);
+  m.innerHTML = `
+    <div class="dlg-box dlg-wide">
+      <div class="dlg-title">Nota esercizio</div>
+      <div class="dlg-msg">Verrà salvata su questa serie (es. "fastidio spalla", "buona esecuzione").</div>
+      <textarea class="import-textarea note-textarea" id="note-text" placeholder="Scrivi una nota…">${escapeHtml(cur)}</textarea>
+      <div class="dlg-actions dlg-actions-top">
+        <button class="dlg-btn dlg-btn-cancel" id="note-cancel">Annulla</button>
+        <button class="dlg-btn dlg-btn-ok" id="note-ok">Salva</button>
+      </div>
+    </div>`;
+  m.classList.add("show");
+  m.querySelector("#note-cancel").onclick = () => m.classList.remove("show");
+  m.querySelector("#note-ok").onclick = () => {
+    if (!ex._pendingNotes) ex._pendingNotes = {};
+    ex._pendingNotes[bi] = m.querySelector("#note-text").value.trim();
+    persist();
+    m.classList.remove("show");
+    renderExec();
+  };
 }
 
 /* ---------- warm-up al volo (#5) ---------- */
@@ -925,12 +967,19 @@ function openNum(kind, current) {
   if (label) label.textContent = kind === "weight" ? "Peso (kg)" : "Ripetizioni";
   const input = m.querySelector("#num-input");
   input.value = current || "";
+  // PESO: chip che AGGIUNGONO (+incremento). REPS: chip PRESET che impostano il valore.
   const chips =
     kind === "weight"
-      ? [0.25, 0.5, 1, 5, 10, 15, 20]
-      : [1, 2, 3, 5];
+      ? [1.25, 2.5, 5, 10, 15, 20]
+      : [6, 8, 10, 12, 15, 20];
+  const isPresetChips = kind !== "weight"; // reps = preset diretti
   m.querySelector("#num-chips").innerHTML = chips
-    .map((c) => `<button class="num-chip" data-c="${c}">+${c}</button>`)
+    .map(
+      (c) =>
+        `<button class="num-chip" data-c="${c}">${
+          isPresetChips ? _fmtNum(c) : "+" + _fmtNum(c)
+        }</button>`
+    )
     .join("");
   const step = kind === "weight" ? 1 : 1;
   m.querySelector("#num-minus").onclick = () =>
@@ -938,8 +987,11 @@ function openNum(kind, current) {
   m.querySelector("#num-plus").onclick = () =>
     (input.value = round(num(input.value) + step, kind));
   m.querySelectorAll(".num-chip").forEach((ch) => {
-    ch.onclick = () =>
-      (input.value = round(num(input.value) + parseFloat(ch.dataset.c), kind));
+    ch.onclick = () => {
+      const c = parseFloat(ch.dataset.c);
+      // reps: il chip IMPOSTA il valore; peso: lo somma
+      input.value = isPresetChips ? round(c, kind) : round(num(input.value) + c, kind);
+    };
   });
   m.querySelector("#num-ok").onclick = () => {
     const v = round(num(input.value), kind);
@@ -951,6 +1003,10 @@ function openNum(kind, current) {
 }
 function num(v) {
   return parseFloat(v) || 0;
+}
+/** Formatta un numero in stile IT: 1.25 → "1,25", 5 → "5". */
+function _fmtNum(n) {
+  return String(n).replace(".", ",");
 }
 function round(v, kind) {
   if (kind === "weight") return Math.max(0, Math.round(v * 4) / 4); // step 0.25
@@ -966,6 +1022,8 @@ function confirmSet() {
   const weight = parseFloat(document.getElementById("exw").textContent) || 0;
   const reps = parseInt(document.getElementById("exr").textContent, 10) || 0;
 
+  // nota in attesa per questo esercizio → la attacco a questa serie e la svuoto
+  const noteForSet = pendingNote(ex.bi);
   ex.done.push({
     exerciseRef: exo.ref,
     exerciseName: exo.name,
@@ -973,11 +1031,13 @@ function confirmSet() {
     type: set.type || "work",
     weight: weight,
     reps: reps,
-    note: "",
+    targetReps: set.reps, // obiettivo di scheda per questa serie (per il feedback AI)
+    note: noteForSet,
     bi: ex.bi,
     si: ex.si,
     week: ex.currentWeek || 1,
   });
+  if (noteForSet && ex._pendingNotes) ex._pendingNotes[ex.bi] = "";
   persist();
   showUndo();
   advance();
@@ -1311,6 +1371,7 @@ async function finalizeSession(state, autoTerminated) {
     if (!exercisesMap[key]) {
       exercisesMap[key] = {
         exerciseRef: d.exerciseRef,
+        exerciseName: d.exerciseName, // nome leggibile (per il feedback AI)
         muscleGroup: d.muscleGroup,
         sets: [],
       };
@@ -1319,6 +1380,7 @@ async function finalizeSession(state, autoTerminated) {
       type: d.type,
       weight: d.weight,
       reps: d.reps,
+      targetReps: d.targetReps != null ? d.targetReps : "", // obiettivo scheda
       note: d.note,
       // esercizi a durata (cardio): minuti + parametri
       durataMin: d.durataMin != null ? d.durataMin : "",
