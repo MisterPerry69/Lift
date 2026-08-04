@@ -243,3 +243,12 @@
 .sd-row-type-max { background: var(--accent-ghost); color: var(--accent); }
 .sd-row-type-warmup { background: var(--surface-3); color: var(--text-dim); }
 .sd-row-type-failure { background: var(--danger-ghost); color: var(--danger); }
+
+/* Nota inserita durante l'allenamento, nel dettaglio sessione */
+.sd-row-note {
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  font-style: italic;
+  margin: 2px 0 var(--sp-2) 26px;
+  line-height: 1.4;
+}

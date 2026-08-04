@@ -155,12 +155,15 @@ function _renderSessionDetail(s, sets, prs) {
             st.setType && st.setType !== "work" && st.setType !== "normal"
               ? `<span class="sd-row-type sd-row-type-${st.setType}">${st.setType}</span>`
               : "";
+          const noteHtml = st.note
+            ? `<div class="sd-row-note">✎ ${escapeHtml(st.note)}</div>`
+            : "";
           return `
             <div class="sd-row">
               <span class="sd-row-n">${i + 1}</span>
               <span class="sd-row-val"><strong>${w}</strong> kg × <strong>${r}</strong></span>
               ${typeTag}
-            </div>`;
+            </div>${noteHtml}`;
         })
         .join("");
       return `

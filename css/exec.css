@@ -588,11 +588,12 @@
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
-  padding: 11px var(--sp-4);
-  font-size: var(--fs-body);
+  padding: 10px var(--sp-3);
+  font-size: var(--fs-small);
   font-weight: 700;
   font-family: var(--font-mono);
-  min-width: 52px;
+  min-width: 44px;
+  white-space: nowrap;
   transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast), transform var(--t-fast);
 }
 .num-chip:active {
@@ -699,15 +700,30 @@
    ============================================ */
 .exec-prevline {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--sp-3);
+  gap: 4px;
   margin-top: var(--sp-4);
-  font-size: var(--fs-small);
-  flex-wrap: wrap;
 }
-.pl-prev { color: var(--text-dim); }
-.pl-prev strong { color: var(--text); font-family: var(--font-mono); font-weight: 700; }
+.pl-prev-label {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+}
+.pl-serie-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+}
+.pl-serie-cur { color: var(--text); font-weight: 700; }
+.pl-sep { color: var(--text-dim-2); opacity: 0.5; }
 .pl-pr {
   font-family: var(--font-cond);
   text-transform: uppercase;

@@ -181,7 +181,12 @@ function setsForBlock(b) {
     }));
   }
   const extra = b._extraSets || [];
-  return extra.concat(base);
+  let all = extra.concat(base);
+  // serie saltate ("salta serie" le TOGLIE dal conteggio, non le ripropone):
+  // rimuovo dalla coda tante serie di lavoro quante ne sono state saltate.
+  const skipped = b._skippedSets || 0;
+  if (skipped > 0) all = all.slice(0, Math.max(0, all.length - skipped));
+  return all;
 }
 
 function totalSetsOfBlock(b) {
@@ -334,6 +339,10 @@ function renderExec() {
   if (isBlockComplete(ex.bi) && ex.si >= totalSetsOfBlock(b)) {
     return renderExecCompleted(b);
   }
+  // esercizio a corpo libero / reps "max" → vista SOLO REPS (numero grande + / − + ✅)
+  if (isBodyweightBlock(b)) {
+    return renderExecReps(b);
+  }
   const exo = curExerciseOfBlock(b);
   const totSets = totalSetsOfBlock(b);
   const set = curSet();
@@ -345,18 +354,30 @@ function renderExec() {
   const sugW = sug ? sug.weight : null;
   const sugR = targetNum;
   const sugLabel = !sug
-    ? "Nessun riferimento per questo esercizio"
+    ? "Nessun riferimento esercizio precedente"
     : sug.source === "today"
     ? "Serie precedente oggi: " + sug.weight + " kg × " + sug.reps
     : "Stesso peso dell'ultima volta";
 
-  // Riferimento allenamento precedente, SERIE per SERIE + PR (riga sotto i bottoni)
-  const prevRef = prevSessionSet(exo.ref, ex.si); // {weight,reps} della serie corrispondente
+  // Riferimento allenamento precedente COMPLETO: tutte le serie dell'ultima volta + PR
+  const prevAll = (ex.previousByExercise || {})[exo.ref] || [];
   const prObj = (ex.prByExercise || {})[exo.ref] || {};
   const prVal = prObj.heaviest || prObj["1rm"] || 0;
   let prevHtml = "";
-  if (prevRef && prevRef.weight != null) {
-    prevHtml = `<span class="pl-prev">Ultima volta: <strong>${prevRef.weight}</strong> kg × <strong>${prevRef.reps}</strong></span>`;
+  if (prevAll.length) {
+    const serie = prevAll
+      .filter((p) => p.weight != null || p.reps != null)
+      .map((p, i) => {
+        const w = p.weight != null ? p.weight : "—";
+        const r = p.reps != null ? p.reps : "—";
+        // evidenzio la serie corrispondente a quella corrente
+        const isCur = i === ex.si;
+        return `<span class="pl-serie${isCur ? " pl-serie-cur" : ""}">${w}×${r}</span>`;
+      })
+      .join('<span class="pl-sep">·</span>');
+    prevHtml =
+      `<div class="pl-prev-label">Ultima volta</div>` +
+      `<div class="pl-serie-row">${serie}</div>`;
   }
   if (prVal > 0) {
     prevHtml += `<span class="pl-pr">PR ${prVal}</span>`;
@@ -660,19 +681,139 @@ function confirmDuration(minutiFatti) {
   });
   persist();
   showUndo();
-  // un esercizio durata = un blocco intero: avanzo al blocco successivo.
-  // (il timer cardio, se attivo, si è già chiuso prima di chiamare qui)
-  ex.si = 0;
-  ex.bi++;
+  // un esercizio durata = un blocco intero. Vado al prossimo NON completato
+  // (recupera eventuali saltati), niente bi++ cieco né chiusura automatica.
+  _advanceToNextIncomplete();
+}
+
+function skipDuration() {
+  // salto = passo oltre senza registrare; vado al prossimo non completato.
+  _advanceToNextIncomplete(ex.bi + 1);
+}
+
+/** Sposta il puntatore al primo blocco non completato (da `from`, default bi+1). */
+function _advanceToNextIncomplete(from) {
+  const start = from != null ? from : ex.bi + 1;
+  const nextInc = firstIncompleteBlock(Math.min(start, ex.blocks.length));
+  if (nextInc >= 0) {
+    ex.bi = nextInc;
+    ex.si = 0;
+  } else {
+    ex.bi = Math.min(ex.bi, ex.blocks.length - 1);
+    ex.si = totalSetsOfBlock(curBlock());
+  }
   persist();
   renderExec();
 }
 
-function skipDuration() {
-  ex.si = 0;
-  ex.bi++;
+/* ---------- vista SOLO REPS (esercizi a corpo libero / "max") ---------- */
+
+/** true se il blocco è a corpo libero o con target "max" (niente peso da inserire). */
+function isBodyweightBlock(b) {
+  if (!b || isDurationBlock(b)) return false;
+  if (/corpo\s*libero/i.test(String(b.attrezzo || ""))) return true;
+  // tutte le serie della settimana con target "max" → esercizio a cedimento a corpo libero
+  const sets = setsForBlock(b);
+  return sets.length > 0 && sets.every((s) => String(s.reps).toLowerCase() === "max");
+}
+
+function renderExecReps(b) {
+  const root = document.getElementById("screen-exec");
+  const exo = curExerciseOfBlock(b);
+  const totSets = totalSetsOfBlock(b);
+  const set = curSet();
+  const weekTag = ex.weeks
+    ? `<span class="ep-week">Settimana ${ex.currentWeek}/${ex.weeks}</span>`
+    : "";
+  const partners = supersetPartners(b);
+  const ssTag = b.supersetGroup
+    ? `<div class="exec-superset">Superset ${escapeHtml(b.supersetGroup)}${
+        partners.length ? " · con " + partners.map((p) => escapeHtml(p.exerciseName)).join(", ") : ""
+      }</div>`
+    : "";
+  const note = (b.note || b.noteDefault || "").trim();
+  const targetTxt = String(set.reps).toLowerCase() === "max" ? "max" : escapeHtml(String(set.reps));
+  // valore di partenza: reps della serie corrispondente dell'ultima volta, o vuoto
+  const prev = prevSessionSet(exo.ref, ex.si);
+  const startReps = prev && prev.reps != null ? prev.reps : "";
+
+  root.innerHTML = `
+    <div class="exec-header">
+      <div>
+        <div class="eh-name">${escapeHtml(ex.templateName)}</div>
+        <div class="eh-timer" id="eh-timer">00:00:00</div>
+      </div>
+      <div class="exec-header-actions">
+        <button class="eh-overview" id="ex-overview" title="Panoramica scheda">${iconSvg("list")}</button>
+        <button class="eh-discard" id="ex-discard" title="Scarta sessione">✕</button>
+        <button class="eh-end" id="ex-end">TERMINA</button>
+      </div>
+    </div>
+    <div class="exec-body">
+      <div class="exec-top">
+        <div class="exec-progress">Esercizio ${ex.bi + 1} / ${ex.blocks.length} ${weekTag}</div>
+        ${ssTag}
+        <div class="exec-exname">${escapeHtml(exo.name)}</div>
+        ${note ? `<div class="exec-note">${escapeHtml(note)}</div>` : ""}
+      </div>
+
+      <div class="exec-focus">
+        <div class="exec-set-nav">Serie ${ex.si + 1} / ${totSets} · obiettivo ${targetTxt} reps</div>
+        <div class="dur-input-row">
+          <button class="dur-step" id="reps-minus" aria-label="Meno">−</button>
+          <div class="dur-value">
+            <span id="reps-val">${startReps !== "" ? startReps : 0}</span>
+            <span class="dur-unit">reps</span>
+          </div>
+          <button class="dur-step" id="reps-plus" aria-label="Più">+</button>
+        </div>
+        <button class="big-check dur-confirm" id="ex-reps-done" aria-label="Conferma">${iconSvg("check")}</button>
+      </div>
+
+      <div class="exec-secondary">
+        <button class="exec-note-btn ${pendingNote(ex.bi) ? "has-note" : ""}" id="ex-note">${iconSvg("edit")} Nota</button>
+        <button class="exec-skip" id="ex-skip">Salta serie</button>
+      </div>
+    </div>
+  `;
+
+  startSessionTimer();
+  document.getElementById("ex-end").onclick = confirmEnd;
+  document.getElementById("ex-discard").onclick = confirmDiscard;
+  document.getElementById("ex-overview").onclick = openOverview;
+  document.getElementById("ex-note").onclick = () => openNoteEditor(ex.bi);
+  const rv = document.getElementById("reps-val");
+  const stepR = (d) => (rv.textContent = Math.max(0, (parseInt(rv.textContent, 10) || 0) + d));
+  document.getElementById("reps-minus").onclick = () => stepR(-1);
+  document.getElementById("reps-plus").onclick = () => stepR(1);
+  document.getElementById("ex-reps-done").onclick = () =>
+    confirmReps(parseInt(rv.textContent, 10) || 0);
+  document.getElementById("ex-skip").onclick = skipSet;
+}
+
+/** Registra una serie a corpo libero (solo reps, peso 0). */
+function confirmReps(reps) {
+  const b = curBlock();
+  const exo = curExerciseOfBlock(b);
+  const set = curSet();
+  const noteForSet = pendingNote(ex.bi);
+  ex.done.push({
+    exerciseRef: exo.ref,
+    exerciseName: exo.name,
+    muscleGroup: exo.muscle,
+    type: set.type || "work",
+    weight: 0,
+    reps: reps,
+    targetReps: set.reps,
+    note: noteForSet,
+    bi: ex.bi,
+    si: ex.si,
+    week: ex.currentWeek || 1,
+  });
+  if (noteForSet && ex._pendingNotes) ex._pendingNotes[ex.bi] = "";
   persist();
-  renderExec();
+  showUndo();
+  advance();
 }
 
 /* ---------- panoramica scheda + salto rapido (#tendina) ---------- */
@@ -737,10 +878,13 @@ function openOverview() {
       const isCur = bi === ex.bi;
       // blocco fatto in una sessione PRECEDENTE di questa settimana (ripresa)
       const resumed = (ex.resumedDoneBlocks || []).indexOf(bi) >= 0;
+      // pallini basati sui DONE REALI (non sulla posizione): un blocco saltato
+      // avanti NON deve apparire fatto.
+      const doneCount = ex.done.filter((d) => d.bi === bi && d.type !== "skipped").length;
       const dots = sets
         .map((s, si) => {
           const cls =
-            resumed || bi < ex.bi || (bi === ex.bi && si < ex.si)
+            resumed || si < doneCount
               ? "ov-dot-done"
               : isCur && si === ex.si
               ? "ov-dot-cur"
@@ -1045,18 +1189,12 @@ function confirmSet() {
 
 function skipSet() {
   const b = curBlock();
-  const exo = curExerciseOfBlock(b);
-  ex.done.push({
-    exerciseRef: exo.ref,
-    exerciseName: exo.name,
-    muscleGroup: exo.muscle,
-    type: "skipped",
-    weight: null,
-    reps: null,
-    note: "",
-    bi: ex.bi,
-    si: ex.si,
-  });
+  // "Salta serie" TOGLIE questa serie dal blocco (non la ripropone).
+  b._skippedSets = (b._skippedSets || 0) + 1;
+  // se dopo lo skip siamo oltre l'ultima serie rimasta, il blocco è completo:
+  // advance porterà al prossimo non completato.
+  const tot = totalSetsOfBlock(b);
+  if (ex.si >= tot) ex.si = Math.max(0, tot - 1);
   persist();
   advance(true);
 }
