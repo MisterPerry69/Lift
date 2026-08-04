@@ -345,7 +345,7 @@ function renderExec() {
   const sugW = sug ? sug.weight : null;
   const sugR = targetNum;
   const sugLabel = !sug
-    ? "Nessun riferimento, parti come ti senti"
+    ? "Nessun riferimento per questo esercizio"
     : sug.source === "today"
     ? "Serie precedente oggi: " + sug.weight + " kg × " + sug.reps
     : "Stesso peso dell'ultima volta";
