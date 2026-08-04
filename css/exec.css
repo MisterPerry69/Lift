@@ -902,13 +902,13 @@
   margin-bottom: var(--sp-5);
 }
 .dur-step {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   border-radius: var(--radius-pill);
   background: var(--surface-2);
   border: 1.5px solid var(--border);
   color: var(--text);
-  font-size: 2rem;
+  font-size: 2.2rem;
   line-height: 1;
   display: grid;
   place-items: center;
@@ -921,10 +921,12 @@
   flex-direction: column;
   align-items: center;
 }
-.dur-value #dur-min {
+/* numero grande, sia per cardio a tempo (#dur-min) sia per reps addominali (#reps-val) */
+.dur-value #dur-min,
+.dur-value #reps-val {
   font-family: var(--font-mono);
-  font-size: 3.4rem;
-  font-weight: 700;
+  font-size: 4rem;
+  font-weight: 800;
   color: var(--accent);
   line-height: 1;
 }
@@ -934,9 +936,15 @@
   letter-spacing: 0.14em;
   font-size: var(--fs-micro);
   color: var(--text-dim-2);
-  margin-top: var(--sp-1);
+  margin-top: var(--sp-2);
 }
-.big-check.dur-confirm { width: 76px; height: 76px; }
+/* ✅ grande come negli esercizi normali (108px) */
+.big-check.dur-confirm {
+  width: 108px;
+  height: 108px;
+  margin-top: var(--sp-2);
+}
+.big-check.dur-confirm svg { width: 46px; height: 46px; }
 
 /* Bottone nota esercizio */
 .exec-note-btn {
