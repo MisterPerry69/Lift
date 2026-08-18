@@ -417,6 +417,265 @@
 }
 .import-btn:active { transform: scale(0.97); opacity: 0.9; }
 
+/* --- Carica PDF (dentro il pannello import) --- */
+.import-pdf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: var(--sp-3);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: transform var(--t-fast), opacity var(--t-fast);
+}
+.import-pdf-btn:active { transform: scale(0.97); opacity: 0.9; }
+.import-pdf-btn svg { width: 16px; height: 16px; }
+.import-or {
+  text-align: center;
+  color: var(--text-dim-2);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: var(--sp-4) 0 var(--sp-3);
+}
+
+/* --- Editor "correggi valori" (PDF import) --- */
+.pdf-imp-meta { margin-bottom: var(--sp-4); }
+.pdf-imp-meta-row {
+  display: grid;
+  grid-template-columns: 1fr 100px;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.pdf-imp-field { display: flex; flex-direction: column; gap: var(--sp-1); }
+.pdf-imp-lab {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim-2);
+  font-weight: 700;
+}
+.pdf-imp-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--fs-body);
+  padding: var(--sp-2) var(--sp-3);
+  outline: none;
+}
+.pdf-imp-input:focus { border-color: var(--accent); }
+.pdf-imp-input.sm { font-size: var(--fs-small); padding: var(--sp-2); }
+.pdf-imp-input.xs { width: 64px; text-align: center; font-family: var(--font-mono); }
+
+.pdf-imp-wk {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.pdf-imp-wk-name {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--fs-title);
+  font-weight: 600;
+  padding: 0 0 var(--sp-2);
+  margin-bottom: var(--sp-3);
+  outline: none;
+}
+.pdf-imp-wk-name:focus { border-color: var(--accent); }
+
+.pdf-imp-ex {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.pdf-imp-ex-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.pdf-imp-ex-name {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  padding: var(--sp-2) var(--sp-3);
+  outline: none;
+}
+.pdf-imp-ex-name:focus { border-color: var(--accent); }
+.pdf-imp-ex-del {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: var(--danger-ghost);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.pdf-imp-ex-add {
+  width: 100%;
+  margin-top: var(--sp-2);
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  color: var(--text-dim-2);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  padding: var(--sp-3);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.pdf-imp-ex-add:active { border-color: var(--accent); color: var(--accent); }
+.pdf-imp-sup {
+  flex-shrink: 0;
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-micro);
+  color: var(--accent);
+  border: 1px solid var(--accent-ghost);
+  border-radius: var(--radius-pill);
+  padding: 1px 8px;
+}
+.pdf-imp-ex-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.pdf-imp-weeks {
+  margin-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.pdf-imp-week {
+  border-top: 1px solid var(--border-soft);
+  padding-top: var(--sp-2);
+}
+.pdf-imp-wk-lab {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--sp-2);
+}
+.pdf-imp-sets { display: flex; flex-direction: column; gap: var(--sp-2); }
+.pdf-imp-set {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.pdf-imp-set .pdf-imp-input.xs { width: 56px; }
+.pdf-imp-set-nota { flex-basis: 100%; font-size: var(--fs-small); }
+.pdf-imp-set-n {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  width: 16px;
+  flex-shrink: 0;
+}
+.pdf-imp-sel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--fs-small);
+  padding: var(--sp-1) var(--sp-2);
+  outline: none;
+}
+.pdf-imp-sel:focus { border-color: var(--accent); }
+.pdf-imp-set-del {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background: var(--surface-3);
+  color: var(--text-dim);
+  border-radius: var(--radius-sm);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.pdf-imp-set-add {
+  margin-top: var(--sp-2);
+  background: var(--surface-3);
+  color: var(--accent);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-pill);
+}
+.pdf-imp-dur {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.pdf-imp-unit { color: var(--text-dim-2); font-size: var(--fs-small); }
+
+.pdf-imp-error {
+  margin: var(--sp-3) 0;
+  padding: var(--sp-3);
+  background: var(--danger-ghost);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+}
+.pdf-imp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+}
+.pdf-imp-regen {
+  width: 100%;
+  background: var(--surface-2);
+  color: var(--accent);
+  border: 1px solid var(--accent-ghost);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: var(--sp-3);
+  border-radius: var(--radius-pill);
+  transition: transform var(--t-fast), opacity var(--t-fast);
+}
+.pdf-imp-regen:active { transform: scale(0.97); opacity: 0.9; }
+
+
 /* Blocco periodizzato */
 .block-periodized .ps-note {
   font-size: var(--fs-small);

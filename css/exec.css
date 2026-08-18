@@ -115,6 +115,64 @@
   margin: var(--sp-2) auto 0;
 }
 
+/* Nota personale (promemoria persistente): riquadro accent, in alto */
+.exec-nota-personale {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  font-size: var(--fs-small);
+  line-height: 1.4;
+  color: var(--accent);
+  background: var(--accent-ghost);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-3);
+  max-width: 320px;
+  margin: var(--sp-2) auto 0;
+}
+.exec-nota-personale svg,
+.exec-nota-personale .icon { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; }
+
+/* Nota della serie corrente: sopra i controlli, ben visibile */
+.exec-nota-serie {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--gold);
+  background: var(--gold-ghost);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-3);
+  margin: var(--sp-2) 0;
+}
+
+/* Nell'editor nota personale: nota attuale con X per cancellarla */
+.note-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+.note-current-txt {
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.note-current-del {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-ghost);
+  color: var(--danger);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
 /* Stato superset */
 .exec-superset {
   font-family: var(--font-cond);
@@ -390,6 +448,29 @@
   transition: opacity var(--t-fast);
 }
 .exec-skip:active { opacity: 0.7; }
+
+/* Salta esercizio: tasto rosso riquadrato, in fondo, ben separato dai controlli
+   serie e dalla X di "termina" in alto. Non è un tasto primario. */
+.exec-skip-block {
+  display: block;
+  width: 100%;
+  margin-top: var(--sp-6);
+  padding: var(--sp-3);
+  background: transparent;
+  color: var(--danger);
+  border: 1.5px solid var(--danger);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.exec-skip-block:active {
+  background: var(--danger-ghost);
+  transform: scale(0.98);
+}
 .exec-addset {
   color: var(--text-dim-2);
   font-size: var(--fs-small);
@@ -785,6 +866,14 @@
   letter-spacing: 0.04em;
   font-size: 0.6rem;
   color: #3fae5a;
+  margin-left: var(--sp-2);
+}
+.ov-skipped {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.6rem;
+  color: var(--danger);
   margin-left: var(--sp-2);
 }
 .ov-add {

@@ -61,7 +61,17 @@ function parseImportSet(raw, ctx) {
   }
   // reps: numero o stringa (range "8-12", "8rm", "max")
   const reps = typeof raw.reps === "number" ? raw.reps : String(raw.reps).trim();
-  return { reps, type };
+  const set = { reps, type };
+  // rest-pause: recupero breve PRIMA di questa serie (es. 20" prima della MAX)
+  if (raw.restBefore != null && raw.restBefore !== "") {
+    const rb = parseInt(raw.restBefore, 10);
+    if (Number.isFinite(rb) && rb > 0) set.restBefore = rb;
+  }
+  // nota specifica di questa serie (es. "mantieni il carico" solo sull'ultima)
+  if (raw.nota != null && String(raw.nota).trim() !== "") {
+    set.nota = String(raw.nota).trim();
+  }
+  return set;
 }
 
 /**

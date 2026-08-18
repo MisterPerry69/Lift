@@ -163,6 +163,21 @@
   font-family: var(--font);
 }
 
+/* Esercizio saltato nel dettaglio sessione */
+.sd-ex-skipped { opacity: 0.75; }
+.sd-ex-skip-tag {
+  flex-shrink: 0;
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  color: var(--danger);
+  background: var(--danger-ghost);
+  border-radius: var(--radius-pill);
+  padding: 2px 10px;
+}
+
 .sd-section-label {
   margin: var(--sp-5) 0 var(--sp-2);
 }

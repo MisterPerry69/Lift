@@ -173,7 +173,12 @@ function setsForBlock(b) {
   if (b.perWeek) {
     const wi = (ex.currentWeek || 1) - 1;
     const wk = b.perWeek[wi] || b.perWeek[0] || { sets: [] };
-    base = (wk.sets || []).map((s) => ({ reps: s.reps, type: s.type || "work" }));
+    base = (wk.sets || []).map((s) => {
+      const o = { reps: s.reps, type: s.type || "work" };
+      if (s.restBefore != null) o.restBefore = s.restBefore; // rest-pause
+      if (s.nota != null && String(s.nota).trim() !== "") o.nota = String(s.nota).trim(); // nota per-serie
+      return o;
+    });
   } else {
     base = (b.sets || []).map((s) => ({
       reps: s.targetReps != null ? s.targetReps : 8,
@@ -181,12 +186,10 @@ function setsForBlock(b) {
     }));
   }
   const extra = b._extraSets || [];
-  let all = extra.concat(base);
-  // serie saltate ("salta serie" le TOGLIE dal conteggio, non le ripropone):
-  // rimuovo dalla coda tante serie di lavoro quante ne sono state saltate.
-  const skipped = b._skippedSets || 0;
-  if (skipped > 0) all = all.slice(0, Math.max(0, all.length - skipped));
-  return all;
+  // Il totale serie NON si accorcia più: "salta serie" registra un done
+  // di tipo "skipped" per quella serie (barrata nello storico), ma la serie
+  // resta nel conteggio. Il completamento del blocco è deciso da isBlockComplete.
+  return extra.concat(base);
 }
 
 function totalSetsOfBlock(b) {
@@ -229,10 +232,8 @@ function repsTargetNumeric(set) {
   return Number.isFinite(n) ? n : 8;
 }
 
-/** Secondi di rest da una stringa tipo "2'30\"", "1'30\"", "0", o numero. */
-function restSecondsOf(b) {
-  if (b.restAfterSetSec != null) return b.restAfterSetSec; // vecchio formato
-  const raw = b.rest;
+/** Secondi da una stringa tipo "2'30\"", "1'30\"", "20\"", "0", o numero. */
+function parseRestSeconds(raw) {
   if (raw == null || raw === "") return 0;
   if (typeof raw === "number") return raw;
   const str = String(raw).trim();
@@ -244,6 +245,22 @@ function restSecondsOf(b) {
     return min * 60 + sec;
   }
   return 0;
+}
+
+/** Rest generale dell'esercizio (tra le serie). */
+function restSecondsOf(b) {
+  if (b.restAfterSetSec != null) return b.restAfterSetSec; // vecchio formato
+  return parseRestSeconds(b.rest);
+}
+
+/**
+ * Rest-pause "prima" di una serie: se la serie ha restBefore (es. 20" prima
+ * della MAX), quello sostituisce il rest normale nel timer che la precede.
+ * Ritorna secondi > 0 solo se la serie di destinazione ha un restBefore valido.
+ */
+function restBeforeOfSet(set) {
+  if (!set || set.restBefore == null || set.restBefore === "") return 0;
+  return parseRestSeconds(set.restBefore);
 }
 
 /** Gli altri esercizi dello stesso superset del blocco corrente (per etichetta). */
@@ -396,6 +413,8 @@ function renderExec() {
       }</div>`
     : "";
   const note = (b.note || b.noteDefault || "").trim();
+  const notaPers = exerciseNotaPersonale(exo.ref);
+  const setNota = (set.nota || "").trim();
   const setTypeTag =
     set.type && set.type !== "work"
       ? `<span class="exec-settype exec-settype-${set.type}">${set.type}</span>`
@@ -423,12 +442,14 @@ function renderExec() {
         ${ssTag}
         <div class="exec-exname">${escapeHtml(exo.name)}</div>
         ${note ? `<div class="exec-note">${escapeHtml(note)}</div>` : ""}
+        ${notaPers ? `<div class="exec-nota-personale">${iconSvg("edit")} ${escapeHtml(notaPers)}</div>` : ""}
       </div>
 
       <div class="exec-focus ${isWarmup ? "exec-focus-warmup" : ""}">
         <div class="exec-set-nav">Serie ${ex.si + 1} / ${totSets} ${setTypeTag} · obiettivo ${escapeHtml(
     targetLabel
   )} reps</div>
+        ${setNota ? `<div class="exec-nota-serie">⚠ ${escapeHtml(setNota)}</div>` : ""}
         <div class="exec-prev">${escapeHtml(sugLabel)}</div>
         <div class="exec-controls">
           <button class="big-num" id="ex-weight">
@@ -448,9 +469,11 @@ function renderExec() {
 
       <div class="exec-secondary">
         <button class="exec-add-warmup" id="ex-add-warmup">+ avvicinamento</button>
-        <button class="exec-note-btn ${pendingNote(ex.bi) ? "has-note" : ""}" id="ex-note">${iconSvg("edit")} Nota</button>
+        <button class="exec-note-btn ${notaPers ? "has-note" : ""}" id="ex-note">${iconSvg("edit")} Nota</button>
         <button class="exec-skip" id="ex-skip">Salta serie</button>
       </div>
+
+      <button class="exec-skip-block" id="ex-skip-block" type="button">❎ Salta esercizio</button>
     </div>
   `;
 
@@ -466,16 +489,39 @@ function renderExec() {
     openNum("reps", parseInt(document.getElementById("exr").textContent, 10) || targetNum);
   document.getElementById("ex-check").onclick = confirmSet;
   document.getElementById("ex-skip").onclick = skipSet;
+  document.getElementById("ex-skip-block").onclick = skipBlock;
 }
 
-/* ---------- note per esercizio (durante l'allenamento) ---------- */
+/* ---------- nota personale per esercizio (persistente sul catalogo) ---------- */
 
-/** Nota "in attesa" per il blocco bi (verrà salvata sulla prossima serie). */
-function pendingNote(bi) {
-  return (ex._pendingNotes && ex._pendingNotes[bi]) || "";
+/** id catalogo (senza "ex:") da un exerciseRef. */
+function _exId(ref) {
+  return String(ref || "").replace(/^ex:/, "");
 }
 
+/** Voce catalogo di un esercizio (da EXERCISES_CATALOG). */
+function _catEntry(ref) {
+  const id = _exId(ref);
+  const cat = typeof EXERCISES_CATALOG !== "undefined" ? EXERCISES_CATALOG : [];
+  return cat.find((e) => String(e.id) === id) || null;
+}
+
+/** Nota personale persistente dell'esercizio (promemoria), o "" se assente. */
+function exerciseNotaPersonale(ref) {
+  const e = _catEntry(ref);
+  return (e && (e.notaPersonale || "")).trim();
+}
+
+/**
+ * Editor della NOTA PERSONALE dell'esercizio corrente (bi).
+ * Persistente sul catalogo: riappare in alto ogni volta che rifai l'esercizio.
+ * Mostra la nota attuale (con X per cancellarla) + textarea per scrivere/modificare.
+ */
 function openNoteEditor(bi) {
+  const b = ex.blocks[bi];
+  const exo = curExerciseOfBlock(b);
+  const cur = exerciseNotaPersonale(exo.ref);
+
   let m = document.getElementById("note-modal");
   if (!m) {
     m = document.createElement("div");
@@ -486,26 +532,46 @@ function openNoteEditor(bi) {
       if (e.target === m) m.classList.remove("show");
     });
   }
-  const cur = pendingNote(bi);
   m.innerHTML = `
     <div class="dlg-box dlg-wide">
-      <div class="dlg-title">Nota esercizio</div>
-      <div class="dlg-msg">Verrà salvata su questa serie (es. "fastidio spalla", "buona esecuzione").</div>
-      <textarea class="import-textarea note-textarea" id="note-text" placeholder="Scrivi una nota…">${escapeHtml(cur)}</textarea>
+      <div class="dlg-title">Nota personale</div>
+      <div class="dlg-msg">Promemoria per ${escapeHtml(exo.name)}: riappare ogni volta che rifai l'esercizio (es. "dolore spalla, abbassa peso").</div>
+      ${
+        cur
+          ? `<div class="note-current" id="note-current">
+              <span class="note-current-txt">${escapeHtml(cur)}</span>
+              <button class="note-current-del" id="note-del" title="Cancella nota">✕</button>
+            </div>`
+          : ""
+      }
+      <textarea class="import-textarea note-textarea" id="note-text" placeholder="Scrivi la nota…">${escapeHtml(cur)}</textarea>
       <div class="dlg-actions dlg-actions-top">
         <button class="dlg-btn dlg-btn-cancel" id="note-cancel">Annulla</button>
         <button class="dlg-btn dlg-btn-ok" id="note-ok">Salva</button>
       </div>
     </div>`;
   m.classList.add("show");
-  m.querySelector("#note-cancel").onclick = () => m.classList.remove("show");
-  m.querySelector("#note-ok").onclick = () => {
-    if (!ex._pendingNotes) ex._pendingNotes = {};
-    ex._pendingNotes[bi] = m.querySelector("#note-text").value.trim();
-    persist();
-    m.classList.remove("show");
-    renderExec();
+
+  const save = async (nota) => {
+    const id = _exId(exo.ref);
+    try {
+      await apiPost("lift_save_exercise_note", { exerciseId: id, nota: nota });
+      // aggiorno la copia in memoria così la nota appare/sparisce subito (no reload)
+      const e = _catEntry(exo.ref);
+      if (e) e.notaPersonale = nota;
+      apiInvalidate("lift_get_data"); // il bootstrap rileggerà il catalogo aggiornato
+      m.classList.remove("show");
+      renderExec();
+    } catch (err) {
+      liftAlert("Errore salvataggio nota: " + (err.message || err));
+    }
   };
+
+  m.querySelector("#note-cancel").onclick = () => m.classList.remove("show");
+  m.querySelector("#note-ok").onclick = () =>
+    save(m.querySelector("#note-text").value.trim());
+  const del = m.querySelector("#note-del");
+  if (del) del.onclick = () => save(""); // X = cancella la nota
 }
 
 /* ---------- warm-up al volo (#5) ---------- */
@@ -597,6 +663,7 @@ function renderExecDuration(b) {
     ? `<span class="ep-week">Settimana ${ex.currentWeek}/${ex.weeks}</span>`
     : "";
   const note = (b.note || b.noteDefault || "").trim();
+  const notaPers = exerciseNotaPersonale(exo.ref);
 
   root.innerHTML = `
     <div class="exec-header">
@@ -619,6 +686,7 @@ function renderExecDuration(b) {
   } ${weekTag}</div>
         <div class="exec-exname">${escapeHtml(exo.name)}</div>
         ${note ? `<div class="exec-note">${escapeHtml(note)}</div>` : ""}
+        ${notaPers ? `<div class="exec-nota-personale">${iconSvg("edit")} ${escapeHtml(notaPers)}</div>` : ""}
       </div>
 
       <div class="exec-focus">
@@ -687,8 +755,9 @@ function confirmDuration(minutiFatti) {
 }
 
 function skipDuration() {
-  // salto = passo oltre senza registrare; vado al prossimo non completato.
-  _advanceToNextIncomplete(ex.bi + 1);
+  // "Salta esercizio" del cardio: stesso comportamento del tasto generale
+  // (marca _skippedBlock + conferma), così non rende incompleto l'allenamento.
+  skipBlock();
 }
 
 /** Sposta il puntatore al primo blocco non completato (da `from`, default bi+1). */
@@ -732,6 +801,8 @@ function renderExecReps(b) {
       }</div>`
     : "";
   const note = (b.note || b.noteDefault || "").trim();
+  const notaPers = exerciseNotaPersonale(exo.ref);
+  const setNota = (set.nota || "").trim();
   const targetTxt = String(set.reps).toLowerCase() === "max" ? "max" : escapeHtml(String(set.reps));
   // valore di partenza: reps della serie corrispondente dell'ultima volta, o vuoto
   const prev = prevSessionSet(exo.ref, ex.si);
@@ -755,10 +826,12 @@ function renderExecReps(b) {
         ${ssTag}
         <div class="exec-exname">${escapeHtml(exo.name)}</div>
         ${note ? `<div class="exec-note">${escapeHtml(note)}</div>` : ""}
+        ${notaPers ? `<div class="exec-nota-personale">${iconSvg("edit")} ${escapeHtml(notaPers)}</div>` : ""}
       </div>
 
       <div class="exec-focus">
         <div class="exec-set-nav">Serie ${ex.si + 1} / ${totSets} · obiettivo ${targetTxt} reps</div>
+        ${setNota ? `<div class="exec-nota-serie">⚠ ${escapeHtml(setNota)}</div>` : ""}
         <div class="dur-input-row">
           <button class="dur-step" id="reps-minus" aria-label="Meno">−</button>
           <div class="dur-value">
@@ -771,9 +844,11 @@ function renderExecReps(b) {
       </div>
 
       <div class="exec-secondary">
-        <button class="exec-note-btn ${pendingNote(ex.bi) ? "has-note" : ""}" id="ex-note">${iconSvg("edit")} Nota</button>
+        <button class="exec-note-btn ${notaPers ? "has-note" : ""}" id="ex-note">${iconSvg("edit")} Nota</button>
         <button class="exec-skip" id="ex-skip">Salta serie</button>
       </div>
+
+      <button class="exec-skip-block" id="ex-skip-block" type="button">❎ Salta esercizio</button>
     </div>
   `;
 
@@ -789,6 +864,7 @@ function renderExecReps(b) {
   document.getElementById("ex-reps-done").onclick = () =>
     confirmReps(parseInt(rv.textContent, 10) || 0);
   document.getElementById("ex-skip").onclick = skipSet;
+  document.getElementById("ex-skip-block").onclick = skipBlock;
 }
 
 /** Registra una serie a corpo libero (solo reps, peso 0). */
@@ -796,7 +872,6 @@ function confirmReps(reps) {
   const b = curBlock();
   const exo = curExerciseOfBlock(b);
   const set = curSet();
-  const noteForSet = pendingNote(ex.bi);
   ex.done.push({
     exerciseRef: exo.ref,
     exerciseName: exo.name,
@@ -805,12 +880,11 @@ function confirmReps(reps) {
     weight: 0,
     reps: reps,
     targetReps: set.reps,
-    note: noteForSet,
+    note: "",
     bi: ex.bi,
     si: ex.si,
     week: ex.currentWeek || 1,
   });
-  if (noteForSet && ex._pendingNotes) ex._pendingNotes[ex.bi] = "";
   persist();
   showUndo();
   advance();
@@ -896,8 +970,11 @@ function openOverview() {
       const ss = b.supersetGroup
         ? `<span class="ov-ss">SS ${escapeHtml(b.supersetGroup)}</span>`
         : "";
+      const skipped = isBlockSkipped(bi);
       const resumedTag = resumed
         ? `<span class="ov-resumed">fatto</span>`
+        : skipped
+        ? `<span class="ov-skipped">saltato</span>`
         : "";
       const target = targetSummaryForBlock(b);
       const doneSum = doneSummaryForBlock(bi);
@@ -909,7 +986,7 @@ function openOverview() {
             ${doneSum ? `<div class="ov-item-done">✓ ${escapeHtml(doneSum)}</div>` : ""}
             <div class="ov-item-dots">${dots}</div>
           </div>
-          <div class="ov-item-meta">${resumed ? "✓" : done + "/" + sets.length}</div>
+          <div class="ov-item-meta">${resumed ? "✓" : skipped ? "❎" : done + "/" + sets.length}</div>
         </button>`;
     })
     .join("");
@@ -1027,15 +1104,47 @@ function _appendExerciseToSession(exo) {
  * (done non-skipped >= n. serie previste), oppure è tra i blocchi ripresi da
  * una sessione precedente della stessa settimana.
  */
+/** Conteggi delle serie done per un blocco: { ok, skipped }. */
+function _blockDoneCounts(bi) {
+  let ok = 0, skipped = 0;
+  ex.done.forEach((d) => {
+    if (d.bi !== bi) return;
+    if (d.type === "skipped") skipped++;
+    else ok++;
+  });
+  return { ok, skipped };
+}
+
+/** Il blocco ha almeno una serie EFFETTIVAMENTE fatta (non-skipped). */
+function isBlockDone(bi) {
+  return _blockDoneCounts(bi).ok > 0;
+}
+
+/**
+ * Il blocco è SALTATO di proposito: tasto "salta esercizio" (_skippedBlock),
+ * oppure tutte le serie previste sono state saltate (nessuna fatta).
+ */
+function isBlockSkipped(bi) {
+  const b = ex.blocks[bi];
+  if (!b) return false;
+  if (b._skippedBlock) return true;
+  const needed = totalSetsOfBlock(b);
+  const c = _blockDoneCounts(bi);
+  return needed > 0 && c.ok === 0 && c.skipped >= needed;
+}
+
+/**
+ * Blocco "gestito" = non più da fare: ripreso da sessione precedente, saltato
+ * di proposito, oppure ogni serie prevista ha un esito (fatta o saltata).
+ */
 function isBlockComplete(bi) {
   if ((ex.resumedDoneBlocks || []).indexOf(bi) >= 0) return true;
   const b = ex.blocks[bi];
   if (!b) return false;
+  if (b._skippedBlock) return true;
   const needed = totalSetsOfBlock(b);
-  const doneOk = ex.done.filter(
-    (d) => d.bi === bi && d.type !== "skipped"
-  ).length;
-  return doneOk >= needed;
+  const c = _blockDoneCounts(bi);
+  return c.ok + c.skipped >= needed;
 }
 
 /**
@@ -1166,8 +1275,6 @@ function confirmSet() {
   const weight = parseFloat(document.getElementById("exw").textContent) || 0;
   const reps = parseInt(document.getElementById("exr").textContent, 10) || 0;
 
-  // nota in attesa per questo esercizio → la attacco a questa serie e la svuoto
-  const noteForSet = pendingNote(ex.bi);
   ex.done.push({
     exerciseRef: exo.ref,
     exerciseName: exo.name,
@@ -1176,12 +1283,11 @@ function confirmSet() {
     weight: weight,
     reps: reps,
     targetReps: set.reps, // obiettivo di scheda per questa serie (per il feedback AI)
-    note: noteForSet,
+    note: "",
     bi: ex.bi,
     si: ex.si,
     week: ex.currentWeek || 1,
   });
-  if (noteForSet && ex._pendingNotes) ex._pendingNotes[ex.bi] = "";
   persist();
   showUndo();
   advance();
@@ -1189,14 +1295,71 @@ function confirmSet() {
 
 function skipSet() {
   const b = curBlock();
-  // "Salta serie" TOGLIE questa serie dal blocco (non la ripropone).
-  b._skippedSets = (b._skippedSets || 0) + 1;
-  // se dopo lo skip siamo oltre l'ultima serie rimasta, il blocco è completo:
-  // advance porterà al prossimo non completato.
-  const tot = totalSetsOfBlock(b);
-  if (ex.si >= tot) ex.si = Math.max(0, tot - 1);
+  const exo = curExerciseOfBlock(b);
+  const set = curSet();
+  // "Salta serie": registra QUESTA serie come skipped (barrata nello storico)
+  // e passa alla successiva. Il totale serie NON si accorcia.
+  ex.done.push({
+    exerciseRef: exo.ref,
+    exerciseName: exo.name,
+    muscleGroup: exo.muscle,
+    type: "skipped",
+    weight: 0,
+    reps: 0,
+    targetReps: set.reps,
+    note: "",
+    bi: ex.bi,
+    si: ex.si,
+    week: ex.currentWeek || 1,
+  });
   persist();
+  showUndo();
   advance(true);
+}
+
+/**
+ * Salta l'INTERO esercizio corrente (tasto ❎). Chiede conferma.
+ * Marca il blocco come saltato di proposito: NON rende incompleto l'allenamento.
+ * In un superset salta solo QUESTO blocco, non tutto il gruppo.
+ */
+async function skipBlock() {
+  const b = curBlock();
+  const exo = curExerciseOfBlock(b);
+  const ok = await liftConfirm(
+    "Saltare tutto l'esercizio " + (exo.name || "") + "? Non conterà come incompleto.",
+    { okLabel: "Salta esercizio", danger: true }
+  );
+  if (!ok) return;
+
+  b._skippedBlock = true;
+  // Una riga "skipped" così l'esercizio compare comunque nello storico.
+  ex.done.push({
+    exerciseRef: exo.ref,
+    exerciseName: exo.name,
+    muscleGroup: exo.muscle,
+    type: "skipped",
+    weight: 0,
+    reps: 0,
+    targetReps: "",
+    note: "",
+    bi: ex.bi,
+    si: 0,
+    week: ex.currentWeek || 1,
+  });
+  persist();
+  closeRest();
+
+  // vai al prossimo blocco da fare; se non ce ne sono, resta sull'ultimo (vista completato)
+  const next = firstIncompleteBlock(ex.bi);
+  if (next >= 0) {
+    ex.bi = next;
+    ex.si = 0;
+  } else {
+    ex.bi = Math.min(ex.bi, ex.blocks.length - 1);
+    ex.si = totalSetsOfBlock(curBlock());
+  }
+  persist();
+  renderExec();
 }
 
 /**
@@ -1288,9 +1451,19 @@ function advance(noRest) {
   }
 
   persist();
-  // rest: solo se la scheda lo prevede e non era uno skip
-  if (!noRest && restSec > 0) {
-    openRest(restSec, { hint: nextUpLabel() });
+  // Rest-pause: se la serie a cui stiamo arrivando ha un restBefore (es. 20"
+  // prima della MAX), quello sostituisce il rest normale dell'esercizio.
+  const destSets = setsForBlock(curBlock());
+  const destSet = destSets[ex.si];
+  const restBefore = restBeforeOfSet(destSet);
+  const effectiveRest = restBefore > 0 ? restBefore : restSec;
+
+  // rest: solo se previsto e non era uno skip
+  if (!noRest && effectiveRest > 0) {
+    openRest(effectiveRest, {
+      hint: nextUpLabel(),
+      label: restBefore > 0 ? "Rest-pause" : undefined,
+    });
   } else {
     renderExec();
   }
@@ -1525,11 +1698,26 @@ async function finalizeSession(state, autoTerminated) {
       parametri: d.parametri || "",
     });
   });
-  // completato = ogni blocco ha almeno una serie registrata (done con quel bi)
+  // Stato per blocco: FATTO (>=1 serie non-skipped) o SALTATO (_skippedBlock o
+  // tutte le serie skipped). Un blocco è "gestito" se fatto O saltato.
+  // completed = ogni blocco è gestito; solo i "da fare" lasciati aperti bloccano.
   const blocks = state.blocks || [];
-  const doneBi = new Set((state.done || []).map((d) => d.bi));
-  const completedExercises = blocks.filter((_, bi) => doneBi.has(bi)).length;
-  const isCompleted = blocks.length > 0 && completedExercises >= blocks.length;
+  const done = state.done || [];
+  const counts = {}; // bi -> {ok, skipped}
+  done.forEach((d) => {
+    if (!counts[d.bi]) counts[d.bi] = { ok: 0, skipped: 0 };
+    if (d.type === "skipped") counts[d.bi].skipped++;
+    else counts[d.bi].ok++;
+  });
+  const handledBi = new Set(); // blocchi gestiti (fatti o saltati) → per doneBlocks + completed
+  blocks.forEach((b, bi) => {
+    const c = counts[bi] || { ok: 0, skipped: 0 };
+    const isDone = c.ok > 0;
+    const isSkipped = !!(b && b._skippedBlock) || (c.ok === 0 && c.skipped > 0);
+    if (isDone || isSkipped) handledBi.add(bi);
+  });
+  const isCompleted = blocks.length > 0 && handledBi.size >= blocks.length;
+  const doneBi = handledBi; // per la ripresa: fatti + saltati (entrambi non da riproporre)
 
   const payload = {
     templateId: state.templateId,

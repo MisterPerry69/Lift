@@ -134,6 +134,18 @@ function _renderSessionDetail(s, sets, prs) {
             .map((t) => PR_LABEL[t] || t)
             .join(" · ")}</span>`
         : "";
+      // Esercizio interamente SALTATO: tutte le sue righe sono skipped.
+      const allSkipped =
+        ex.sets.length > 0 && ex.sets.every((st) => st.setType === "skipped");
+      if (allSkipped) {
+        return `
+          <div class="sd-ex sd-ex-skipped">
+            <div class="sd-ex-head">
+              <div class="sd-ex-name">${escapeHtml(ex.name)}</div>
+              <span class="sd-ex-skip-tag">SALTATO</span>
+            </div>
+          </div>`;
+      }
       const rowsHtml = ex.sets
         .map((st, i) => {
           if (st.setType === "skipped") {
