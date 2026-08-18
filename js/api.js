@@ -55,6 +55,8 @@ const LOADING_MSG = {
   lift_save_session: "Salvo la sessione…",
   lift_log_weight: "Salvo il peso…",
   lift_get_stats: "Carico le statistiche…",
+  lift_get_pr_stats: "Calcolo i progressi…",
+  lift_get_month_report: "Preparo il report…",
   lift_get_exercise_trend: "Carico il trend…",
   lift_save_custom_exercise: "Salvo l'esercizio…",
   lift_generate_session_feedback: "Analisi in corso…",
