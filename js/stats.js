@@ -18,16 +18,16 @@ async function openStats() {
     </div>
 
     <div class="stats-tabs">
-      <button class="stats-tab active" data-tab="freq">Frequenza</button>
+      <button class="stats-tab active" data-tab="weight">Frequenza</button>
       <button class="stats-tab" data-tab="pr">PR</button>
       <button class="stats-tab" data-tab="trend">Trend</button>
-      <button class="stats-tab" data-tab="weight">Peso</button>
+      <button class="stats-tab" data-tab="freq">Peso</button>
     </div>
 
-    <div id="view-freq" class="stats-view active"></div>
+    <div id="view-weight" class="stats-view active"></div>
     <div id="view-pr" class="stats-view"></div>
     <div id="view-trend" class="stats-view"></div>
-    <div id="view-weight" class="stats-view"></div>
+    <div id="view-freq" class="stats-view"></div>
   `;
 
   document.getElementById("st-back").onclick = openProfile;
