@@ -109,6 +109,20 @@
   font-weight: 700;
 }
 
+/* Card media settimanale: occupa tutta la riga sotto attuale/min/max */
+.stats-card--wide {
+  grid-column: 1 / -1;
+}
+/* Semaforo media sett. scorsa vs penultima */
+.wavg { border-width: 1.5px; }
+.wavg-good { border-color: #3fae5a; }
+.wavg-good .v { color: #3fae5a; }
+.wavg-warn { border-color: #d98a2b; }
+.wavg-warn .v { color: #d98a2b; }
+.wavg-bad { border-color: var(--danger); }
+.wavg-bad .v { color: var(--danger); }
+.wavg-neutral { border-color: var(--border-soft); }
+
 /* PR list */
 .pr-group {
   margin-bottom: var(--sp-4);

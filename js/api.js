@@ -59,6 +59,7 @@ const LOADING_MSG = {
   lift_save_custom_exercise: "Salvo l'esercizio…",
   lift_generate_session_feedback: "Analisi in corso…",
   lift_suggest_starting_weight: "Calcolo un peso…",
+  lift_extract_pdf: "Leggo il PDF della scheda…",
 };
 
 // Cache delle GET, key = "action?params". TTL semplice in ms.

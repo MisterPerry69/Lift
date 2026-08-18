@@ -238,6 +238,62 @@ function _renderWeight() {
   `;
 }
 
+/**
+ * Media peso di una settimana (lun-dom) `weeksAgo` settimane fa rispetto a oggi.
+ * weeksAgo=1 → settimana scorsa completa; =2 → quella prima.
+ * Ritorna { avg, from, to, count } o null se nessuna pesata in quella settimana.
+ */
+function _weeklyAvg(log, weeksAgo) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  // lunedì della settimana CORRENTE
+  const dow = today.getDay(); // 0=dom
+  const offToMon = dow === 0 ? 6 : dow - 1;
+  const monThis = new Date(today);
+  monThis.setDate(today.getDate() - offToMon);
+  // lunedì e domenica della settimana target
+  const from = new Date(monThis);
+  from.setDate(monThis.getDate() - 7 * weeksAgo);
+  const to = new Date(from);
+  to.setDate(from.getDate() + 6);
+  to.setHours(23, 59, 59, 999);
+
+  const inWeek = log.filter((p) => {
+    const d = new Date(p.date);
+    d.setHours(12, 0, 0, 0);
+    return d >= from && d <= to;
+  });
+  if (inWeek.length === 0) return null;
+  const avg = inWeek.reduce((s, p) => s + p.weight, 0) / inWeek.length;
+  return { avg: avg, from: from, to: to, count: inWeek.length };
+}
+
+/** Card "media sett. scorsa" con semaforo vs penultima settimana. */
+function _weightAvgCardHtml(lastWeek, prevWeek) {
+  if (!lastWeek) {
+    return `<div class="stats-card stats-card--wide">
+      <div class="v">—</div>
+      <div class="l">media sett. scorsa</div>
+    </div>`;
+  }
+  const fmt = (d) =>
+    d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+  const range = `${fmt(lastWeek.from)}–${fmt(lastWeek.to)}`;
+
+  // semaforo: confronto con la penultima settimana (se c'è)
+  let cls = "wavg-neutral";
+  if (prevWeek) {
+    const diff = lastWeek.avg - prevWeek.avg;
+    if (diff <= 0.3) cls = "wavg-good";
+    else if (diff <= 1.0) cls = "wavg-warn";
+    else cls = "wavg-bad";
+  }
+  return `<div class="stats-card stats-card--wide wavg ${cls}">
+    <div class="v">${lastWeek.avg.toFixed(1)}</div>
+    <div class="l">media sett. scorsa · ${range}</div>
+  </div>`;
+}
+
 async function _drawWeightChart() {
   await _loadChartJs();
   const boot = await apiGet("lift_get_data", {}, { silent: true });
@@ -258,11 +314,18 @@ async function _drawWeightChart() {
   const current = log[log.length - 1].weight;
   const min = Math.min.apply(null, log.map((p) => p.weight));
   const max = Math.max.apply(null, log.map((p) => p.weight));
+
+  // Media settimana scorsa completa (lun-dom) + confronto con la penultima
+  const lastWeek = _weeklyAvg(log, 1); // {avg, from, to, count} o null
+  const prevWeek = _weeklyAvg(log, 2);
+  const avgCardHtml = _weightAvgCardHtml(lastWeek, prevWeek);
+
   if (sum)
     sum.innerHTML = `
       <div class="stats-card"><div class="v">${current.toFixed(1)}</div><div class="l">attuale kg</div></div>
       <div class="stats-card"><div class="v">${min.toFixed(1)}</div><div class="l">min kg</div></div>
       <div class="stats-card"><div class="v">${max.toFixed(1)}</div><div class="l">max kg</div></div>
+      ${avgCardHtml}
     `;
 
   const ctx = document.getElementById("weight-canvas");

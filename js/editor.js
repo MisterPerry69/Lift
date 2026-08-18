@@ -54,7 +54,7 @@ function _importPanelHtml() {
   return `
     <div class="import-panel" id="ed-import">
       <div class="import-head">
-        <span class="import-title">${iconSvg("play")} Importa Allenamento</span>
+        <span class="import-title">${iconSvg("play")} Importa da JSON</span>
         <button class="import-toggle" id="imp-toggle" type="button">Apri</button>
       </div>
       <div class="import-body" id="imp-body" hidden>
@@ -64,7 +64,7 @@ function _importPanelHtml() {
         <div class="import-error" id="imp-pdf-error" hidden></div>
 
         <div class="import-or">oppure incolla il JSON</div>
-        <textarea class="import-textarea" id="imp-text" placeholder='{ "nome": "Nuovo allenamento", "dataInizio": "2026-06-22", "settimane": 6, "workout": [ ... ] }' spellcheck="false"></textarea>
+        <textarea class="import-textarea" id="imp-text" placeholder='{ "nome": "Brodesco 6 settimane", "dataInizio": "2026-06-22", "settimane": 6, "workout": [ ... ] }' spellcheck="false"></textarea>
         <div class="import-error" id="imp-error" hidden></div>
         <button class="import-btn" id="imp-do" type="button">Importa programma</button>
       </div>
