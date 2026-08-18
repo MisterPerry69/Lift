@@ -58,7 +58,12 @@ function _importPanelHtml() {
         <button class="import-toggle" id="imp-toggle" type="button">Apri</button>
       </div>
       <div class="import-body" id="imp-body" hidden>
-        <p class="import-hint">Incolla il JSON di un <b>programma</b> (più workout, tutte le settimane). Gli esercizi non ancora nel catalogo verranno creati in automatico.</p>
+        <p class="import-hint">Carica il <b>PDF</b> della tua scheda: l'AI la legge e la traduce, poi puoi correggere prima di salvare.</p>
+        <label class="import-pdf-btn" for="imp-pdf">${iconSvg("play")} Carica PDF scheda</label>
+        <input type="file" id="imp-pdf" accept="application/pdf" hidden />
+        <div class="import-error" id="imp-pdf-error" hidden></div>
+
+        <div class="import-or">oppure incolla il JSON</div>
         <textarea class="import-textarea" id="imp-text" placeholder='{ "nome": "Brodesco 6 settimane", "dataInizio": "2026-06-22", "settimane": 6, "workout": [ ... ] }' spellcheck="false"></textarea>
         <div class="import-error" id="imp-error" hidden></div>
         <button class="import-btn" id="imp-do" type="button">Importa programma</button>
@@ -75,6 +80,67 @@ function _wireImportPanel() {
     toggle.textContent = open ? "Chiudi" : "Apri";
   };
   document.getElementById("imp-do").onclick = _doImport;
+
+  const pdfInput = document.getElementById("imp-pdf");
+  if (pdfInput) pdfInput.onchange = _onPdfSelected;
+}
+
+/** File PDF selezionato → base64 → estrazione AI → editor di correzione. */
+async function _onPdfSelected(e) {
+  const file = e.target.files && e.target.files[0];
+  const errBox = document.getElementById("imp-pdf-error");
+  errBox.hidden = true;
+  errBox.textContent = "";
+  if (!file) return;
+
+  if (file.size > 8 * 1024 * 1024) {
+    errBox.textContent = "PDF troppo grande (max 8MB).";
+    errBox.hidden = false;
+    e.target.value = "";
+    return;
+  }
+
+  let pdfBase64;
+  try {
+    pdfBase64 = await _fileToBase64(file);
+  } catch (err) {
+    errBox.textContent = "Impossibile leggere il file.";
+    errBox.hidden = false;
+    e.target.value = "";
+    return;
+  }
+  e.target.value = ""; // permetti di ricaricare lo stesso file
+
+  try {
+    const res = await apiPost("lift_extract_pdf", {
+      pdfBase64: pdfBase64,
+      filename: file.name,
+    });
+    if (res && res.status === "OK" && res.program) {
+      openPdfImportEditor(res.program, pdfBase64);
+    } else {
+      errBox.textContent =
+        (res && res.message) || "L'AI non e riuscita a leggere il PDF.";
+      errBox.hidden = false;
+    }
+  } catch (err) {
+    errBox.textContent = "Errore rete: " + (err.message || err);
+    errBox.hidden = false;
+  }
+}
+
+/** Legge un File come base64 puro (senza prefisso dataURL). */
+function _fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      const comma = dataUrl.indexOf(",");
+      resolve(comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl);
+    };
+    reader.onerror = () => reject(reader.error || new Error("read error"));
+    reader.readAsDataURL(file);
+  });
 }
 
 async function _doImport() {
