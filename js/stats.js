@@ -231,6 +231,12 @@ async function _drawWeightChart() {
 
 const _MACRO_ORDER = ["Schiena", "Petto", "Gambe", "Spalle", "Braccia", "Addome"];
 
+/** Peso "pulito": niente decimali se intero, altrimenti fino a 1 decimale (72, 22.5). */
+function _kg(n) {
+  const v = Math.round((parseFloat(n) || 0) * 10) / 10;
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+
 async function _drawPr() {
   const v = document.getElementById("view-pr");
   v.innerHTML = `<div class="empty-state">Calcolo i progressi…</div>`;
@@ -294,32 +300,48 @@ function _prTopGlobalHtml(ex) {
   return `
     <div class="section-label label-micro pr-sec-label">Top miglioramenti</div>
     <div class="pr-top-grid">
-      ${card("Peso max", peso, peso ? `+${peso.delta.pesoMax.toFixed(1)} kg` : "",
-        peso ? `${peso.prev.pesoMax.toFixed(0)}→${peso.cur.pesoMax.toFixed(0)} kg` : "")}
+      ${card("Peso max", peso, peso ? `+${_kg(peso.delta.pesoMax)} kg` : "",
+        peso ? `${_kg(peso.prev.pesoMax)}→${_kg(peso.cur.pesoMax)} kg` : "")}
       ${card("Volume", vol, vol ? `+${vol.deltaPct.volume.toFixed(0)}%` : "",
         vol ? `${Math.round(vol.cur.volume)} kg tot` : "")}
-      ${card("1RM stimato", rm, rm ? `+${rm.delta.oneRM.toFixed(1)} kg` : "",
-        rm ? `${rm.prev.oneRM.toFixed(0)}→${rm.cur.oneRM.toFixed(0)} kg` : "")}
+      ${card("1RM stimato", rm, rm ? `+${_kg(rm.delta.oneRM)} kg` : "",
+        rm ? `${_kg(rm.prev.oneRM)}→${_kg(rm.cur.oneRM)} kg` : "")}
     </div>`;
 }
 
-/** Sezione 2: un blocco per macro, top 3 esercizi migliorati di peso. */
+/**
+ * "Guadagno" di un esercizio secondo la sua metrica:
+ * peso → delta.pesoMax (kg); reps → delta.repsMax (ripetizioni).
+ * Gli esercizi a corpo libero (addome) usano le reps, quelli con carico il peso.
+ */
+function _prGain(e) {
+  return e.metrica === "reps" ? e.delta.repsMax : e.delta.pesoMax;
+}
+
+/** Riga "Prev → Cur unità +delta" secondo la metrica dell'esercizio. */
+function _prGroupRowHtml(e) {
+  let detail;
+  if (e.metrica === "reps") {
+    detail = `${e.prev.repsMax} → ${e.cur.repsMax} reps <strong>+${e.delta.repsMax}</strong>`;
+  } else {
+    detail = `${_kg(e.prev.pesoMax)} → ${_kg(e.cur.pesoMax)} kg <strong>+${_kg(e.delta.pesoMax)}</strong>`;
+  }
+  return `
+        <div class="pr-grp-row">
+          <span class="pr-grp-ex">${escapeHtml(e.name)}</span>
+          <span class="pr-grp-val">${detail}</span>
+        </div>`;
+}
+
+/** Sezione 2: un blocco per macro, top 3 esercizi migliorati (peso o reps). */
 function _prByGroupHtml(ex) {
   const blocks = _MACRO_ORDER.map((macro) => {
     const top3 = ex
-      .filter((e) => e.macro === macro && e.delta.pesoMax > 0)
-      .sort((a, b) => b.delta.pesoMax - a.delta.pesoMax)
+      .filter((e) => e.macro === macro && _prGain(e) > 0)
+      .sort((a, b) => _prGain(b) - _prGain(a))
       .slice(0, 3);
     const rows = top3.length
-      ? top3
-          .map(
-            (e) => `
-        <div class="pr-grp-row">
-          <span class="pr-grp-ex">${escapeHtml(e.name)}</span>
-          <span class="pr-grp-val">${e.prev.pesoMax.toFixed(0)} → ${e.cur.pesoMax.toFixed(0)} kg <strong>+${e.delta.pesoMax.toFixed(0)}</strong></span>
-        </div>`
-          )
-          .join("")
+      ? top3.map(_prGroupRowHtml).join("")
       : `<div class="pr-grp-row pr-grp-empty">nessun progresso questo mese</div>`;
     return `
       <div class="pr-grp">

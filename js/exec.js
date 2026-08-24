@@ -38,6 +38,7 @@ async function startSession(templateId) {
   };
   persist();
   acquireWakeLock();
+  _armBackGuard();
   showScreen("exec");
   renderExec();
 }
@@ -83,6 +84,7 @@ async function startProgramWorkout(programId, workoutId) {
   };
   persist();
   acquireWakeLock();
+  _armBackGuard();
   showScreen("exec");
   if (doneBlocks.length) {
     liftAlert(
@@ -94,26 +96,62 @@ async function startProgramWorkout(programId, workoutId) {
 }
 
 function resumeSessionIfAny() {
-  const raw = localStorage.getItem(LS_KEY);
-  if (!raw) return false;
+  // 1. PARSING (sicuro): un JSON corrotto è l'UNICO caso in cui si può buttare.
+  const saved = _readActiveSession();
+  if (!saved) return false;
+
+  // 2. auto-terminazione se troppo vecchia (≥4h). Se lastInteractionAt manca
+  //    (NaN), NON auto-termino: meglio riprendere che rischiare di perdere.
+  const hrs = (Date.now() - saved.lastInteractionAt) / 3600000;
+  if (Number.isFinite(hrs) && hrs >= 4) {
+    finalizeSession(saved, true); // salva sul backend
+    localStorage.removeItem(LS_KEY);
+    return false;
+  }
+
+  // 3. RENDERING: se fallisce NON tocco localStorage. La sessione resta salvata
+  //    e recuperabile (banner in home / prossimo avvio). Mai perdere i dati.
   try {
-    const saved = JSON.parse(raw);
-    const hrs = (Date.now() - saved.lastInteractionAt) / 3600000;
-    if (hrs >= 4) {
-      // auto-terminata: la salvo e pulisco
-      finalizeSession(saved, true);
-      localStorage.removeItem(LS_KEY);
-      return false;
-    }
     ex = saved;
     acquireWakeLock();
+    _armBackGuard();
     showScreen("exec");
     renderExec();
     return true;
   } catch (e) {
-    localStorage.removeItem(LS_KEY);
+    console.error("Ripresa sessione: errore di rendering, stato PRESERVATO", e);
+    ex = null; // evito uno stato half-rendered incoerente
     return false;
   }
+}
+
+/** Legge e valida lo stato attivo da localStorage. null se assente/corrotto. */
+function _readActiveSession() {
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) return null;
+  try {
+    const saved = JSON.parse(raw);
+    // sanity minima: deve avere i blocchi. Se no, è irrecuperabile.
+    if (!saved || !Array.isArray(saved.blocks)) {
+      localStorage.removeItem(LS_KEY);
+      return null;
+    }
+    return saved;
+  } catch (e) {
+    localStorage.removeItem(LS_KEY); // JSON corrotto: unico caso di scarto
+    return null;
+  }
+}
+
+/** true se c'è una sessione attiva ripristinabile (per il banner in home). */
+function hasActiveSession() {
+  return !!_readActiveSession();
+}
+
+/** Etichetta della sessione attiva (nome scheda) per il banner. */
+function activeSessionName() {
+  const s = _readActiveSession();
+  return s ? s.templateName || "Allenamento" : "";
 }
 
 function persist() {
@@ -142,6 +180,39 @@ function releaseWakeLock() {
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && ex) acquireWakeLock();
 });
+
+/* ---------- blocco gesture "indietro" durante l'esecuzione ----------
+   Su Android/Chrome la gesture indietro (edge-swipe) o il tasto back, in una
+   PWA che non gestisce la history, ESCE dall'app: cold-start e sessione persa
+   di fatto. Durante l'esecuzione la neutralizziamo: teniamo uno stato-sentinella
+   in cima alla history; ogni volta che il back lo consuma, lo re-inseriamo →
+   l'indietro non fa nulla finché la sessione è attiva. Per uscire: bottoni
+   Termina/Scarta dell'app. */
+let _backGuardArmed = false;
+
+function _armBackGuard() {
+  if (_backGuardArmed) return;
+  _backGuardArmed = true;
+  try {
+    history.pushState({ liftExec: true }, "");
+  } catch (e) {}
+  window.addEventListener("popstate", _onExecPopState);
+}
+
+function _disarmBackGuard() {
+  if (!_backGuardArmed) return;
+  _backGuardArmed = false;
+  window.removeEventListener("popstate", _onExecPopState);
+}
+
+function _onExecPopState() {
+  // se siamo ancora in esecuzione, annulliamo l'indietro re-inserendo lo stato
+  if (ex) {
+    try {
+      history.pushState({ liftExec: true }, "");
+    } catch (e) {}
+  }
+}
 
 /* ---------- helpers stato ---------- */
 
@@ -1617,10 +1688,37 @@ function closeRest() {
   renderExec();
 }
 
+/* AudioContext UNICO, riusato. Su iOS/Android un AudioContext creato fuori da
+   un gesto utente parte "suspended" e resta muto: va creato/sbloccato al primo
+   tap e riutilizzato. Creare un nuovo context ad ogni beep (come prima) su iOS
+   non suona MAI. */
+let _audioCtx = null;
+
+/** Crea (una volta) e sblocca l'AudioContext. Da chiamare su un gesto utente. */
+function _unlockAudio() {
+  try {
+    if (!_audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      _audioCtx = new AC();
+    }
+    if (_audioCtx.state === "suspended") _audioCtx.resume().catch(() => {});
+  } catch (e) {}
+}
+
+// Sblocca l'audio al PRIMO tap/click ovunque nell'app (una volta sola basta,
+// poi il context resta valido per i beep dei timer).
+["touchend", "click"].forEach((ev) =>
+  document.addEventListener(ev, _unlockAudio, { once: false, passive: true })
+);
+
 function beep() {
   try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    const ctx = new AC();
+    _unlockAudio();
+    if (!_audioCtx) return;
+    // se ancora sospeso (nessun gesto sbloccante), provo comunque a riprendere
+    if (_audioCtx.state === "suspended") _audioCtx.resume().catch(() => {});
+    const ctx = _audioCtx;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.frequency.value = 660; // media, non acuta
@@ -1629,6 +1727,15 @@ function beep() {
     g.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + 0.25);
+    // doppio bip breve per farsi sentire meglio a fine pausa
+    const osc2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    osc2.frequency.value = 880;
+    g2.gain.value = 0.18;
+    osc2.connect(g2);
+    g2.connect(ctx.destination);
+    osc2.start(ctx.currentTime + 0.3);
+    osc2.stop(ctx.currentTime + 0.5);
   } catch (e) {}
 }
 
@@ -1651,6 +1758,7 @@ async function confirmDiscard() {
   clearInterval(sessTick);
   clearInterval(restTick);
   releaseWakeLock();
+  _disarmBackGuard();
   localStorage.removeItem(LS_KEY);
   ex = null;
   apiInvalidate("lift_get_data");
@@ -1662,6 +1770,7 @@ function openFinish() {
   clearInterval(sessTick);
   clearInterval(restTick);
   releaseWakeLock();
+  _disarmBackGuard();
   if (typeof renderFinish === "function") {
     renderFinish(ex);
   } else {

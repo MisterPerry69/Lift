@@ -13,7 +13,7 @@
 .home-greeting {
   font-family: var(--font-display);
   font-size: 2.5rem;
-  font-weight: 700;
+  font-weight: 100;
   line-height: 1.05;
   letter-spacing: 0.01em;
 }
@@ -418,4 +418,45 @@
   background: var(--accent);
   color: var(--on-accent);
   border-color: var(--accent);
+}
+
+/* Banner "Riprendi allenamento": rete di sicurezza in home per sessioni
+   attive non riprese in automatico. */
+.resume-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  background: var(--accent-ghost, rgba(255,255,255,0.06));
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.resume-banner-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.resume-banner-txt strong {
+  font-size: var(--fs-small);
+  color: var(--text);
+}
+.resume-banner-txt span {
+  font-size: var(--fs-micro);
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.resume-banner-btn {
+  flex-shrink: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: var(--sp-2) var(--sp-4);
+  font-weight: 700;
+  font-size: var(--fs-small);
 }
