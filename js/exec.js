@@ -190,11 +190,20 @@ document.addEventListener("visibilitychange", () => {
    Termina/Scarta dell'app. */
 let _backGuardArmed = false;
 
+/* Su Chrome Android un solo stato-cuscinetto non basta: la gesture edge-swipe
+   può consumare due entry rapidamente, o intercettare prima che popstate
+   ripristini, e si esce dall'app. Teniamo PIÙ cuscinetti e li rimpiazziamo
+   ad ogni popstate, così lo stack non si esaurisce mai finché la sessione è
+   attiva. È l'unico modo affidabile per bloccare l'uscita in una PWA. */
+const _BACK_GUARD_DEPTH = 3;
+
 function _armBackGuard() {
   if (_backGuardArmed) return;
   _backGuardArmed = true;
   try {
-    history.pushState({ liftExec: true }, "");
+    for (let i = 0; i < _BACK_GUARD_DEPTH; i++) {
+      history.pushState({ liftExec: true, i: i }, "");
+    }
   } catch (e) {}
   window.addEventListener("popstate", _onExecPopState);
 }
@@ -206,9 +215,11 @@ function _disarmBackGuard() {
 }
 
 function _onExecPopState() {
-  // se siamo ancora in esecuzione, annulliamo l'indietro re-inserendo lo stato
+  // Finché la sessione è attiva, ogni "indietro" viene annullato ripristinando
+  // subito un paio di cuscinetti (2 per coprire il caso del doppio-pop).
   if (ex) {
     try {
+      history.pushState({ liftExec: true }, "");
       history.pushState({ liftExec: true }, "");
     } catch (e) {}
   }
@@ -1688,55 +1699,114 @@ function closeRest() {
   renderExec();
 }
 
-/* AudioContext UNICO, riusato. Su iOS/Android un AudioContext creato fuori da
-   un gesto utente parte "suspended" e resta muto: va creato/sbloccato al primo
-   tap e riutilizzato. Creare un nuovo context ad ogni beep (come prima) su iOS
-   non suona MAI. */
+/* ---------- feedback fine pausa: audio + vibrazione + flash ----------
+   Su iPhone l'audio è ostacolato da 3 fattori non aggirabili al 100% (silenzioso
+   hardware, Spotify che possiede l'audio, restrizioni PWA). Quindi usiamo TRE
+   canali: (1) Web Audio, (2) elemento <audio> con file WAV — a volte convive
+   meglio con Spotify, (3) vibrazione (Android; iOS la ignora), (4) flash visivo
+   dell'overlay — l'UNICO garantito su iPhone. Tutti sbloccati al primo tap. */
 let _audioCtx = null;
+let _beepEl = null;
 
-/** Crea (una volta) e sblocca l'AudioContext. Da chiamare su un gesto utente. */
+/** Crea (una volta) e sblocca AudioContext + elemento <audio>. Su un gesto utente. */
 function _unlockAudio() {
   try {
     if (!_audioCtx) {
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      _audioCtx = new AC();
+      if (AC) _audioCtx = new AC();
     }
-    if (_audioCtx.state === "suspended") _audioCtx.resume().catch(() => {});
+    if (_audioCtx && _audioCtx.state === "suspended")
+      _audioCtx.resume().catch(() => {});
+    // elemento <audio>: lo "sblocco" facendo play muto una volta sul gesto
+    if (!_beepEl) {
+      _beepEl = new Audio("assets/beep.wav");
+      _beepEl.preload = "auto";
+      _beepEl.volume = 0.5;
+      // play+pause muto per autorizzare i play successivi da timer
+      const wasMuted = _beepEl.muted;
+      _beepEl.muted = true;
+      const p = _beepEl.play();
+      if (p && p.then)
+        p.then(() => {
+          _beepEl.pause();
+          _beepEl.currentTime = 0;
+          _beepEl.muted = wasMuted;
+        }).catch(() => {
+          _beepEl.muted = wasMuted;
+        });
+      else _beepEl.muted = wasMuted;
+    }
   } catch (e) {}
 }
 
-// Sblocca l'audio al PRIMO tap/click ovunque nell'app (una volta sola basta,
-// poi il context resta valido per i beep dei timer).
+// Sblocca al PRIMO tap/click ovunque (una volta basta, poi resta valido).
 ["touchend", "click"].forEach((ev) =>
   document.addEventListener(ev, _unlockAudio, { once: false, passive: true })
 );
 
-function beep() {
+/** Beep via Web Audio (doppio tono). */
+function _beepWebAudio() {
   try {
-    _unlockAudio();
     if (!_audioCtx) return;
-    // se ancora sospeso (nessun gesto sbloccante), provo comunque a riprendere
     if (_audioCtx.state === "suspended") _audioCtx.resume().catch(() => {});
     const ctx = _audioCtx;
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.frequency.value = 660; // media, non acuta
-    g.gain.value = 0.18; // volume soft (cuffie!)
-    osc.connect(g);
-    g.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.25);
-    // doppio bip breve per farsi sentire meglio a fine pausa
-    const osc2 = ctx.createOscillator();
-    const g2 = ctx.createGain();
-    osc2.frequency.value = 880;
-    g2.gain.value = 0.18;
-    osc2.connect(g2);
-    g2.connect(ctx.destination);
-    osc2.start(ctx.currentTime + 0.3);
-    osc2.stop(ctx.currentTime + 0.5);
+    const mk = (freq, t0, t1) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.frequency.value = freq;
+      g.gain.value = 0.18;
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(ctx.currentTime + t0);
+      osc.stop(ctx.currentTime + t1);
+    };
+    mk(660, 0, 0.25);
+    mk(880, 0.3, 0.5);
   } catch (e) {}
+}
+
+/** Beep via elemento <audio> (file WAV). */
+function _beepFile() {
+  try {
+    if (!_beepEl) return;
+    _beepEl.currentTime = 0;
+    const p = _beepEl.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) {}
+}
+
+/** Vibrazione (Android; iOS Safari non la supporta e la ignora). */
+function _vibrate() {
+  try {
+    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+  } catch (e) {}
+}
+
+/** Flash visivo a tutto schermo: l'unico feedback garantito su iPhone.
+ *  Indipendente dall'overlay del rest (che si chiude subito dopo il beep). */
+function _flashRest() {
+  try {
+    let f = document.getElementById("rest-flash-layer");
+    if (!f) {
+      f = document.createElement("div");
+      f.id = "rest-flash-layer";
+      document.body.appendChild(f);
+    }
+    f.classList.remove("on");
+    // reflow per ri-triggerare l'animazione anche a fine pause consecutive
+    void f.offsetWidth;
+    f.classList.add("on");
+    setTimeout(() => f.classList.remove("on"), 950);
+  } catch (e) {}
+}
+
+/** Feedback completo di fine pausa: tutti i canali insieme. */
+function beep() {
+  _unlockAudio(); // assicura context/elemento pronti
+  _beepWebAudio();
+  _beepFile();
+  _vibrate();
+  _flashRest();
 }
 
 /* ---------- fine sessione ---------- */

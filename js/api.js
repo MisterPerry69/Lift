@@ -79,6 +79,31 @@ function apiInvalidate(actionPrefix) {
   }
 }
 
+/** Attesa non bloccante. */
+function _sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * GET verso GAS con RETRY automatico. GAS su rete instabile (o durante un
+ * redirect intermedio / throttling) risponde a volte con HTML invece di JSON,
+ * o la fetch fallisce del tutto: un singolo colpo diventava "Connessione
+ * fallita" fatale. Le GET sono idempotenti → sicuro riprovare con backoff.
+ */
+async function _getJsonWithRetry(url, tries = 3) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url, { redirect: "follow" });
+      return await _parse(res); // lancia su HTML/non-JSON
+    } catch (e) {
+      lastErr = e;
+      if (i < tries - 1) await _sleep(600 * (i + 1)); // 600ms, 1200ms
+    }
+  }
+  throw lastErr;
+}
+
 async function apiGet(action, params = {}, opts = {}) {
   if (USE_MOCK) return mockResponse(action, params);
   const key = _cacheKey(action, params);
@@ -90,8 +115,7 @@ async function apiGet(action, params = {}, opts = {}) {
   if (showSpin) _showLoading(LOADING_MSG[action]);
   try {
     const qs = new URLSearchParams({ action, ...params }).toString();
-    const res = await fetch(`${GAS_URL}?${qs}`);
-    const data = await _parse(res);
+    const data = await _getJsonWithRetry(`${GAS_URL}?${qs}`, 3);
     _apiCache.set(key, { t: Date.now(), data: data });
     return data;
   } finally {
