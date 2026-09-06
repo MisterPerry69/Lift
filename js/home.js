@@ -4,11 +4,11 @@
 
 const GREETINGS = [
   "Ciao, {name}",
-  "Si torna in pista, {name}",
+  "Daje, {name}",
   "Pronto, {name}?",
   "Bentornato, {name}",
-  "Che si pesta oggi, {name}?",
-  "Forza {name}, si lavora",
+  "{name}?, ci alleniamo?",
+  "Forza {name}, ci si spacca",
 ];
 
 function randomGreeting(name) {
@@ -77,6 +77,9 @@ async function renderHome() {
   // Rete di sicurezza: se esiste una sessione attiva non ripresa (es. la ripresa
   // automatica al boot non è scattata), mostro un banner per recuperarla.
   _renderResumeBanner();
+
+  // Banner report mensile: nella prima settimana del mese, se non ancora aperto.
+  _renderReportBanner();
 
   // Saluto
   document.getElementById("home-greeting").textContent = randomGreeting(
@@ -311,6 +314,53 @@ function _renderResumeBanner() {
   `;
   const btn = document.getElementById("resume-banner-go");
   if (btn) btn.onclick = () => resumeSessionIfAny();
+}
+
+/** Banner "Report di [mese] pronto" nella prima settimana del mese. Resta finché
+ *  non apri il report (poi lo segno visto in localStorage per non ri-mostrarlo). */
+async function _renderReportBanner() {
+  const el = document.getElementById("report-banner");
+  if (!el) return;
+  el.hidden = true;
+  let notice;
+  try {
+    const res = await apiGet("lift_get_report_notice", {}, { silent: true });
+    notice = res && res.notice;
+  } catch (e) {
+    return; // in caso di errore, nessun banner (non blocco la home)
+  }
+  if (!notice || !notice.mese) return;
+  // già aperto/dismesso questo mese?
+  try {
+    if (localStorage.getItem("lift_report_seen") === notice.mese) return;
+  } catch (e) {}
+
+  const label = _monthLabelIt(notice.mese);
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="resume-banner-txt">
+      <strong>📊 Report di ${escapeHtml(label)} pronto</strong>
+      <span>Guarda com'è andato il mese</span>
+    </div>
+    <button class="resume-banner-btn" id="report-banner-go">Apri</button>
+  `;
+  const btn = document.getElementById("report-banner-go");
+  if (btn)
+    btn.onclick = () => {
+      try {
+        localStorage.setItem("lift_report_seen", notice.mese);
+      } catch (e) {}
+      el.hidden = true;
+      openStats(); // apre le statistiche; la tab Report è il default sul mese scorso
+    };
+}
+
+/** "2026-08" → "agosto" (minuscolo, per il banner). */
+function _monthLabelIt(ym) {
+  const m = String(ym).match(/^(\d{4})-(\d{2})$/);
+  if (!m) return ym;
+  const d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, 1);
+  return d.toLocaleDateString("it-IT", { month: "long" });
 }
 
 // startSession() / startProgramWorkout() vivono in exec.js

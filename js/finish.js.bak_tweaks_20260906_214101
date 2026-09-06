@@ -122,15 +122,24 @@ async function _goSaveAndAnalyze() {
     const saveRes = await finalizeSession(s, false);
     if (saveRes && saveRes.status === "OK") {
       finState.saveResult = saveRes;
+      // chiamo AI feedback (fallisce in modo grazioso se Gemini down)
+      try {
+        const fb = await apiPost("lift_generate_session_feedback", {
+          sessionId: saveRes.sessionId,
+        });
+        if (fb && fb.status === "OK") {
+          finState.feedbackText = fb.feedback;
+        } else if (fb && fb.message) {
+          finState.feedbackError =
+            "AI: " + fb.message + (fb.step ? " (step: " + fb.step + ")" : "");
+          console.warn("[FB]", fb);
+        }
+      } catch (e) {
+        finState.feedbackError = "Errore rete: " + (e.message || e);
+        console.error("[FB] fetch", e);
+      }
       localStorage.removeItem(LS_KEY);
-      // Il risultato è pronto SUBITO. Il feedback AI (Gemini) può metterci
-      // minuti: non blocchiamo più l'utente sullo spinner. Mostriamo lo step 3
-      // con il feedback in stato "in arrivo" e lo carichiamo in BACKGROUND.
-      finState.feedbackLoading = true;
-      finState.feedbackText = "";
-      finState.feedbackError = "";
       _renderStep3();
-      _loadFeedbackInBackground(saveRes.sessionId);
     } else {
       throw new Error(
         saveRes && saveRes.message ? saveRes.message : "Salvataggio fallito"
@@ -139,29 +148,6 @@ async function _goSaveAndAnalyze() {
   } catch (err) {
     _goStep(1);
     liftAlert("Errore: " + (err.message || err), "Salvataggio non riuscito");
-  }
-}
-
-/** Carica il feedback AI senza bloccare: aggiorna solo la card quando arriva. */
-async function _loadFeedbackInBackground(sessionId) {
-  try {
-    const fb = await apiPost("lift_generate_session_feedback", {
-      sessionId: sessionId,
-    });
-    if (fb && fb.status === "OK") {
-      finState.feedbackText = fb.feedback;
-    } else if (fb && fb.message) {
-      finState.feedbackError =
-        "AI: " + fb.message + (fb.step ? " (step: " + fb.step + ")" : "");
-      console.warn("[FB]", fb);
-    }
-  } catch (e) {
-    finState.feedbackError = "Errore rete: " + (e.message || e);
-    console.error("[FB] fetch", e);
-  } finally {
-    finState.feedbackLoading = false;
-    // aggiorno la vista SOLO se siamo ancora sullo step 3 di questa sessione
-    if (finState && document.getElementById("fin-step-3")) _renderStep3();
   }
 }
 
@@ -205,21 +191,13 @@ function _renderStep3() {
 
   const fb = finState.feedbackText;
   const fbErr = finState.feedbackError;
-  let feedbackHtml;
-  if (fb) {
-    feedbackHtml = `<div class="fin-feedback">${escapeHtml(fb).replace(/\n/g, "<br>")}</div>`;
-  } else if (finState.feedbackLoading) {
-    // feedback AI ancora in arrivo: non blocca, l'utente può già andare in home
-    feedbackHtml = `<div class="fin-feedback loading">
-        <span class="fin-fb-spin"></span> Sto preparando il commento…
-      </div>`;
-  } else {
-    feedbackHtml = `<div class="fin-feedback empty">
+  const feedbackHtml = fb
+    ? `<div class="fin-feedback">${escapeHtml(fb).replace(/\n/g, "<br>")}</div>`
+    : `<div class="fin-feedback empty">
         Feedback non disponibile al momento.
         ${fbErr ? `<div class="fin-feedback-err">${escapeHtml(fbErr)}</div>` : ""}
         <div class="fin-feedback-retry" id="fin-retry-fb">Rigenera feedback</div>
        </div>`;
-  }
 
   step3.innerHTML = `
     <h1 class="fin-title">Tutto salvato</h1>

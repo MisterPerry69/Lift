@@ -215,13 +215,11 @@ function _disarmBackGuard() {
 }
 
 function _onExecPopState() {
-  // Finché la sessione è attiva, ogni "indietro" viene annullato ri-inserendo
-  // UN solo cuscinetto: un back consuma 1 entry, noi ne rimettiamo 1 → la
-  // history resta STABILE (non cresce). I 3 cuscinetti iniziali coprono il caso
-  // del doppio-pop. Re-pushare 2 farebbe crescere la history senza limite (una
-  // possibile causa dei kill in background per memoria).
+  // Finché la sessione è attiva, ogni "indietro" viene annullato ripristinando
+  // subito un paio di cuscinetti (2 per coprire il caso del doppio-pop).
   if (ex) {
     try {
+      history.pushState({ liftExec: true }, "");
       history.pushState({ liftExec: true }, "");
     } catch (e) {}
   }
@@ -269,12 +267,11 @@ function setsForBlock(b) {
       type: s.setType || "work",
     }));
   }
-  const extra = b._extraSets || []; // warm-up aggiunte al volo (in testa)
-  const append = b._appendSets || []; // serie di lavoro aggiunte al volo (in coda)
+  const extra = b._extraSets || [];
   // Il totale serie NON si accorcia più: "salta serie" registra un done
   // di tipo "skipped" per quella serie (barrata nello storico), ma la serie
   // resta nel conteggio. Il completamento del blocco è deciso da isBlockComplete.
-  return extra.concat(base, append);
+  return extra.concat(base);
 }
 
 function totalSetsOfBlock(b) {
@@ -553,9 +550,7 @@ function renderExec() {
       </div>
 
       <div class="exec-secondary">
-        <button class="exec-add-warmup" id="ex-add-set">${
-          _blockHasDoneSet(ex.bi) ? "+ serie" : "+ avvicinamento"
-        }</button>
+        <button class="exec-add-warmup" id="ex-add-warmup">+ avvicinamento</button>
         <button class="exec-note-btn ${notaPers ? "has-note" : ""}" id="ex-note">${iconSvg("edit")} Nota</button>
         <button class="exec-skip" id="ex-skip">Salta serie</button>
       </div>
@@ -568,9 +563,7 @@ function renderExec() {
   document.getElementById("ex-end").onclick = confirmEnd;
   document.getElementById("ex-discard").onclick = confirmDiscard;
   document.getElementById("ex-overview").onclick = openOverview;
-  document.getElementById("ex-add-set").onclick = _blockHasDoneSet(ex.bi)
-    ? addWorkSet
-    : addWarmupSet;
+  document.getElementById("ex-add-warmup").onclick = addWarmupSet;
   document.getElementById("ex-note").onclick = () => openNoteEditor(ex.bi);
   document.getElementById("ex-weight").onclick = () =>
     openNum("weight", parseFloat(document.getElementById("exw").textContent) || 0);
@@ -675,22 +668,6 @@ function addWarmupSet() {
   b._extraSets.push({ reps: "", type: "warmup" });
   // la nuova warm-up si inserisce nella posizione corrente; resto sulla stessa
   // posizione così l'utente compila prima l'avvicinamento appena creato.
-  persist();
-  renderExec();
-}
-
-/** true se il blocco ha già almeno una serie NON-skipped registrata. Dopo la
- *  prima serie il bottone "+ avvicinamento" diventa "+ serie". */
-function _blockHasDoneSet(bi) {
-  return ex.done.some((d) => d.bi === bi && d.type !== "skipped");
-}
-
-/** Aggiunge una serie di LAVORO in coda al blocco corrente (bottone "+ serie",
- *  disponibile dopo la prima serie). */
-function addWorkSet() {
-  const b = curBlock();
-  if (!b._appendSets) b._appendSets = [];
-  b._appendSets.push({ reps: "", type: "work" });
   persist();
   renderExec();
 }
@@ -1329,80 +1306,28 @@ function openNum(kind, current) {
   const chips =
     kind === "weight"
       ? [1.25, 2.5, 5, 10, 15, 20]
-      : [6, 8, 10, 12, 15];
+      : [6, 8, 10, 12, 15, 20];
   const isPresetChips = kind !== "weight"; // reps = preset diretti
-  const chipsWrap = m.querySelector("#num-chips");
-
-  // PESO: i chip possono SOMMARE (default) o SOTTRARRE. Si passa in modalità
-  // "sottrai" tenendo PREMUTO il tasto − (long-press): la riga di chip diventa
-  // negativa. Un tap breve su − resta il -1 di sempre.
-  numCtx.subtract = false;
-  const renderChips = () => {
-    chipsWrap.innerHTML = chips
-      .map((c) => {
-        const sign = isPresetChips ? "" : numCtx.subtract ? "−" : "+";
-        return `<button class="num-chip${
-          !isPresetChips && numCtx.subtract ? " num-chip-neg" : ""
-        }" data-c="${c}">${sign}${_fmtNum(c)}</button>`;
-      })
-      .join("");
-    chipsWrap.querySelectorAll(".num-chip").forEach((ch) => {
-      ch.onclick = () => {
-        const c = parseFloat(ch.dataset.c);
-        if (isPresetChips) {
-          input.value = round(c, kind); // reps: imposta
-        } else {
-          const delta = numCtx.subtract ? -c : c; // peso: somma o sottrae
-          input.value = round(num(input.value) + delta, kind);
-        }
-      };
-    });
-  };
-  renderChips();
-
-  const step = 1;
-  const minusBtn = m.querySelector("#num-minus");
-  minusBtn.onclick = () =>
+  m.querySelector("#num-chips").innerHTML = chips
+    .map(
+      (c) =>
+        `<button class="num-chip" data-c="${c}">${
+          isPresetChips ? _fmtNum(c) : "+" + _fmtNum(c)
+        }</button>`
+    )
+    .join("");
+  const step = kind === "weight" ? 1 : 1;
+  m.querySelector("#num-minus").onclick = () =>
     (input.value = round(num(input.value) - step, kind));
   m.querySelector("#num-plus").onclick = () =>
     (input.value = round(num(input.value) + step, kind));
-
-  // long-press sul − → toggle modalità sottrazione dei chip (solo peso)
-  if (kind === "weight") {
-    let lpTimer = null;
-    const startLP = () => {
-      lpTimer = setTimeout(() => {
-        lpTimer = null; // segna che il long-press è scattato (così il click non fa -1)
-        numCtx.subtract = !numCtx.subtract;
-        renderChips();
-        try {
-          if (navigator.vibrate) navigator.vibrate(30);
-        } catch (e) {}
-      }, 450);
+  m.querySelectorAll(".num-chip").forEach((ch) => {
+    ch.onclick = () => {
+      const c = parseFloat(ch.dataset.c);
+      // reps: il chip IMPOSTA il valore; peso: lo somma
+      input.value = isPresetChips ? round(c, kind) : round(num(input.value) + c, kind);
     };
-    const cancelLP = () => {
-      if (lpTimer) {
-        clearTimeout(lpTimer);
-        lpTimer = null;
-      }
-    };
-    // se il long-press è scattato, sopprimo il click -1 successivo
-    minusBtn.addEventListener("click", (e) => {
-      if (numCtx._suppressClick) {
-        numCtx._suppressClick = false;
-        e.stopImmediatePropagation();
-        e.preventDefault();
-      }
-    }, true);
-    minusBtn.addEventListener("touchstart", startLP, { passive: true });
-    minusBtn.addEventListener("mousedown", startLP);
-    ["touchend", "touchcancel", "mouseup", "mouseleave"].forEach((ev) =>
-      minusBtn.addEventListener(ev, () => {
-        if (!lpTimer) numCtx._suppressClick = true; // long-press era scattato
-        cancelLP();
-      })
-    );
-  }
+  });
   m.querySelector("#num-ok").onclick = () => {
     const v = round(num(input.value), kind);
     if (kind === "weight") document.getElementById("exw").textContent = v;

@@ -683,6 +683,11 @@
   color: var(--accent);
   transform: scale(0.95);
 }
+/* Chip in modalità sottrazione (long-press sul −): segnalati in rosso. */
+.num-chip-neg {
+  border-color: var(--danger);
+  color: var(--danger);
+}
 
 .num-confirm {
   width: 100%;

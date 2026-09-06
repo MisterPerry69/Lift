@@ -282,3 +282,27 @@
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+
+/* Feedback AI in arrivo (caricamento in background, non blocca). */
+.fin-feedback.loading {
+  color: var(--text-dim-2);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.fin-feedback.loading::before {
+  content: none; /* niente badge "AI" mentre carica */
+}
+.fin-fb-spin {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: finSpin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes finSpin {
+  to { transform: rotate(360deg); }
+}

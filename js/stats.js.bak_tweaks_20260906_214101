@@ -388,15 +388,9 @@ function _ymLabel(ym) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** "YYYY-MM" del MESE SCORSO (l'ultimo concluso): è il report più recente. */
-function _lastYm() {
-  return _shiftYm(_thisYm(), -1);
-}
-
 async function _drawReport(mese) {
   await _loadChartJs();
-  // Il report riguarda solo mesi CONCLUSI: il più recente è il mese scorso.
-  _reportMese = mese || _reportMese || _lastYm();
+  _reportMese = mese || _reportMese || _thisYm();
   const v = document.getElementById("view-report");
   let data;
   try {
@@ -410,8 +404,7 @@ async function _drawReport(mese) {
     return;
   }
 
-  // "avanti" disabilitato una volta arrivati al mese scorso (niente mese corrente)
-  const isCurrent = _reportMese >= _lastYm();
+  const isCurrent = _reportMese >= _thisYm();
   v.innerHTML = `
     <div class="rep-nav">
       <button class="rep-nav-btn" id="rep-prev" aria-label="Mese precedente">‹</button>
@@ -430,7 +423,7 @@ async function _drawReport(mese) {
       ${_repCard("Serie", data.tot.serie, data.prec.serie, data.hasPrev, "")}
     </div>
 
-    <div class="section-label label-micro rep-sec-label">Serie per muscolo</div>
+    <div class="section-label label-micro rep-sec-label">Distribuzione muscoli</div>
     <div class="rep-radar-wrap"><canvas id="report-radar"></canvas></div>
 
     <div class="section-label label-micro rep-sec-label">Giorni allenati</div>
@@ -443,7 +436,7 @@ async function _drawReport(mese) {
   if (nextBtn && !isCurrent)
     nextBtn.onclick = () => _drawReport(_shiftYm(_reportMese, 1));
 
-  _drawReportRadar(data.radar, _ymLabel(_reportMese), _ymLabel(data.mesePrec || _shiftYm(_reportMese, -1)));
+  _drawReportRadar(data.radar);
 }
 
 /** Card con valore + delta vs mese precedente. */
@@ -470,8 +463,8 @@ function _repCard(label, cur, prev, hasPrev, unit) {
   </div>`;
 }
 
-/** Radar 6 macro (serie per muscolo): mese del report vs mese prima. */
-function _drawReportRadar(radar, labelCur, labelPrev) {
+/** Radar 6 macro: mese corrente vs precedente. */
+function _drawReportRadar(radar) {
   const ctx = document.getElementById("report-radar");
   if (!ctx || !radar) return;
   if (_reportChart) _reportChart.destroy();
@@ -483,14 +476,14 @@ function _drawReportRadar(radar, labelCur, labelPrev) {
       labels: radar.labels,
       datasets: [
         {
-          label: labelPrev || "Mese prima",
+          label: "Mese prec.",
           data: radar.prev,
           borderColor: "rgba(154,163,173,0.6)",
           backgroundColor: "rgba(154,163,173,0.12)",
           pointRadius: 2,
         },
         {
-          label: labelCur || "Report",
+          label: "Questo mese",
           data: radar.cur,
           borderColor: accent,
           backgroundColor: "rgba(74,222,128,0.18)",

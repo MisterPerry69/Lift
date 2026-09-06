@@ -256,10 +256,13 @@ function _renderProgramWorkoutDetail(prog, wk) {
     <div class="sch-detail-notes">${escapeHtml(prog.nome)} · Settimana ${prog.currentWeek}/${prog.weeks}</div>
     ${blocksHtml || '<div class="empty-state">Nessun esercizio</div>'}
     <button class="save-template-btn" id="pwd-start">${iconSvg("play")} Inizia ${escapeHtml(wk.name)}</button>
+    <button class="add-block-btn" id="pwd-edit">${iconSvg("edit")} Modifica valori scheda</button>
   `;
 
   document.getElementById("pwd-back").onclick = openSchede;
   document.getElementById("pwd-start").onclick = () => startProgramWorkout(prog.id, wk.id);
+  document.getElementById("pwd-edit").onclick = () =>
+    openProgramEditEditor(prog, () => openProgramWorkoutDetail(prog.id, wk.id));
   root.querySelectorAll("[data-swap]").forEach((btn) => {
     btn.onclick = () =>
       openSwapExercise(prog, wk, parseInt(btn.dataset.swap, 10));

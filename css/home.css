@@ -460,3 +460,8 @@
   font-weight: 700;
   font-size: var(--fs-small);
 }
+
+/* Variante del banner per il report mensile (stesso layout del resume). */
+.report-banner {
+  background: var(--surface);
+}
