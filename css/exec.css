@@ -737,6 +737,10 @@
   font-weight: 800;
   letter-spacing: 0.02em;
 }
+/* "Modifica" nel toast: più tenue di "Annulla" (azione secondaria). */
+#undo-edit-btn {
+  color: var(--text-dim);
+}
 
 /* ============================================
    Esercizio a durata (cardio a tempo)
@@ -939,12 +943,44 @@
   margin-top: 3px;
 }
 .ov-item-done {
-  font-size: var(--fs-small);
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+/* Chip di una serie registrata: toccabile per correggere peso×reps. */
+.ov-doneset {
+  font-size: var(--fs-micro);
+  font-family: var(--font-mono);
+  font-weight: 700;
   color: #3fae5a;
-  margin-top: 3px;
-  font-weight: 600;
+  background: rgba(63, 174, 90, 0.12);
+  border: 1px solid rgba(63, 174, 90, 0.35);
+  border-radius: var(--radius-pill);
+  padding: 3px 9px;
+}
+.ov-doneset:active {
+  background: rgba(63, 174, 90, 0.24);
+  transform: scale(0.95);
 }
 .ov-item-dots { margin-top: var(--sp-2); }
+
+/* Editor correzione serie (due campi peso/reps affiancati). */
+.editset-row {
+  display: flex;
+  gap: var(--sp-3);
+  margin: var(--sp-3) 0;
+}
+.editset-field { flex: 1; }
+.editset-lab {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim-2);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+  text-align: center;
+}
 
 /* Vista blocco completato */
 .done-badge {

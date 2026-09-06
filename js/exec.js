@@ -1037,6 +1037,22 @@ function doneSummaryForBlock(bi) {
     .join(" · ");
 }
 
+/** Chip CLICCABILI delle serie registrate di un blocco (per correggerle dalla
+ *  panoramica). Ogni chip porta l'indice GLOBALE in ex.done così si può editare. */
+function doneChipsForBlock(bi) {
+  const chips = [];
+  ex.done.forEach((d, idx) => {
+    if (d.bi !== bi || d.type === "skipped") return;
+    if (d.type === "duration") return; // le durate non si editano qui
+    const w = d.weight != null ? d.weight : "?";
+    const r = d.reps != null ? d.reps : "?";
+    chips.push(
+      `<button class="ov-doneset" data-doneidx="${idx}">${_fmtNum(w)}×${r}</button>`
+    );
+  });
+  return chips.join("");
+}
+
 function openOverview() {
   let o = document.getElementById("ov-modal");
   if (!o) {
@@ -1083,16 +1099,17 @@ function openOverview() {
         : "";
       const target = targetSummaryForBlock(b);
       const doneSum = doneSummaryForBlock(bi);
+      const doneChips = doneChipsForBlock(bi);
       return `
-        <button class="ov-item ${isCur ? "ov-item-cur" : ""}" data-bi="${bi}">
+        <div class="ov-item ${isCur ? "ov-item-cur" : ""}" data-bi="${bi}">
           <div class="ov-item-main">
-            <div class="ov-item-name">${escapeHtml(b.exerciseName)} ${ss}${resumedTag}</div>
+            <div class="ov-item-name ov-item-jump" data-bi="${bi}">${escapeHtml(b.exerciseName)} ${ss}${resumedTag}</div>
             ${target ? `<div class="ov-item-target">${escapeHtml(target)}</div>` : ""}
-            ${doneSum ? `<div class="ov-item-done">✓ ${escapeHtml(doneSum)}</div>` : ""}
-            <div class="ov-item-dots">${dots}</div>
+            ${doneChips ? `<div class="ov-item-done">${doneChips}</div>` : ""}
+            <div class="ov-item-dots ov-item-jump" data-bi="${bi}">${dots}</div>
           </div>
-          <div class="ov-item-meta">${resumed ? "✓" : skipped ? "❎" : done + "/" + sets.length}</div>
-        </button>`;
+          <div class="ov-item-meta ov-item-jump" data-bi="${bi}">${resumed ? "✓" : skipped ? "❎" : done + "/" + sets.length}</div>
+        </div>`;
     })
     .join("");
 
@@ -1107,11 +1124,20 @@ function openOverview() {
     </div>`;
 
   o.querySelector("#ov-close").onclick = () => o.classList.remove("open");
-  o.querySelectorAll(".ov-item").forEach((it) => {
+  // Tocco su nome/pallini/contatore → salta a quel blocco.
+  o.querySelectorAll(".ov-item-jump").forEach((it) => {
     it.onclick = () => {
       const bi = parseInt(it.dataset.bi, 10);
       jumpToBlock(bi);
       o.classList.remove("open");
+    };
+  });
+  // Tocco su una serie già registrata → correggi peso/reps.
+  o.querySelectorAll(".ov-doneset").forEach((chip) => {
+    chip.onclick = (e) => {
+      e.stopPropagation();
+      const idx = parseInt(chip.dataset.doneidx, 10);
+      openEditDoneSet(idx, () => openOverview()); // ridisegna la panoramica dopo
     };
   });
   o.querySelector("#ov-add").onclick = () => {
@@ -1119,6 +1145,70 @@ function openOverview() {
     openAddExercise();
   };
   o.classList.add("open");
+}
+
+/**
+ * Editor per correggere peso/reps di una serie GIÀ registrata (ex.done[idx]).
+ * onDone: callback dopo il salvataggio (es. ridisegnare la panoramica).
+ */
+function openEditDoneSet(idx, onDone) {
+  const d = ex.done[idx];
+  if (!d) return;
+  let m = document.getElementById("editset-modal");
+  if (!m) {
+    m = document.createElement("div");
+    m.id = "editset-modal";
+    m.className = "num-modal";
+    document.body.appendChild(m);
+    m.addEventListener("click", (e) => {
+      if (e.target === m) m.classList.remove("open");
+    });
+  }
+  const w0 = d.weight != null ? d.weight : 0;
+  const r0 = d.reps != null ? d.reps : 0;
+  m.innerHTML = `
+    <div class="num-sheet">
+      <div class="num-sheet-label">Correggi serie · ${escapeHtml(d.exerciseName || "")}</div>
+      <div class="editset-row">
+        <div class="editset-field">
+          <div class="editset-lab">Peso (kg)</div>
+          <div class="num-display">
+            <button class="num-step" id="es-w-minus">−</button>
+            <input id="es-w" readonly inputmode="decimal" value="${_fmtNum(w0)}" />
+            <button class="num-step" id="es-w-plus">+</button>
+          </div>
+        </div>
+        <div class="editset-field">
+          <div class="editset-lab">Reps</div>
+          <div class="num-display">
+            <button class="num-step" id="es-r-minus">−</button>
+            <input id="es-r" readonly inputmode="numeric" value="${r0}" />
+            <button class="num-step" id="es-r-plus">+</button>
+          </div>
+        </div>
+      </div>
+      <button class="num-confirm" id="es-ok">Salva correzione</button>
+    </div>`;
+  const wIn = m.querySelector("#es-w");
+  const rIn = m.querySelector("#es-r");
+  m.querySelector("#es-w-minus").onclick = () =>
+    (wIn.value = _fmtNum(round(num(wIn.value) - 1.25, "weight")));
+  m.querySelector("#es-w-plus").onclick = () =>
+    (wIn.value = _fmtNum(round(num(wIn.value) + 1.25, "weight")));
+  m.querySelector("#es-r-minus").onclick = () =>
+    (rIn.value = Math.max(0, (parseInt(rIn.value, 10) || 0) - 1));
+  m.querySelector("#es-r-plus").onclick = () =>
+    (rIn.value = (parseInt(rIn.value, 10) || 0) + 1);
+  m.querySelector("#es-ok").onclick = () => {
+    const nw = round(num(wIn.value), "weight");
+    const nr = Math.max(0, parseInt(rIn.value, 10) || 0);
+    ex.done[idx].weight = nw;
+    ex.done[idx].reps = nr;
+    persist();
+    m.classList.remove("open");
+    if (onDone) onDone();
+  };
+  m.classList.add("open");
 }
 
 /**
@@ -1635,9 +1725,17 @@ function showUndo() {
     t = document.createElement("div");
     t.id = "undo-toast";
     t.className = "toast";
-    t.innerHTML = `<span>Serie salvata</span><button id="undo-btn">ANNULLA</button>`;
     document.body.appendChild(t);
   }
+  // ricreo i bottoni ogni volta (ANNULLA + MODIFICA sull'ultima serie salvata)
+  t.innerHTML = `<span>Serie salvata</span>
+    <button id="undo-edit-btn">MODIFICA</button>
+    <button id="undo-btn">ANNULLA</button>`;
+  t.querySelector("#undo-edit-btn").onclick = () => {
+    const idx = ex.done.length - 1; // ultima serie registrata
+    if (idx >= 0) openEditDoneSet(idx, () => renderExec());
+    t.classList.remove("show");
+  };
   t.querySelector("#undo-btn").onclick = () => {
     // rimuovo l'ultimo done e torno ESATTAMENTE su quel blocco/serie (superset-safe).
     const removed = ex.done.pop();
