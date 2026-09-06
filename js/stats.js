@@ -393,21 +393,50 @@ function _lastYm() {
   return _shiftYm(_thisYm(), -1);
 }
 
+/* Cache LOCALE dei report: un mese concluso è immutabile → una volta scaricato
+   lo teniamo in localStorage e lo mostriamo ISTANTANEO (niente rete, niente
+   spinner) anche riaprendo l'app. */
+const _REPORT_CACHE_KEY = "lift_report_cache";
+
+function _readReportCache(mese) {
+  try {
+    const all = JSON.parse(localStorage.getItem(_REPORT_CACHE_KEY) || "{}");
+    return all[mese] || null;
+  } catch (e) {
+    return null;
+  }
+}
+function _writeReportCache(mese, data) {
+  try {
+    const all = JSON.parse(localStorage.getItem(_REPORT_CACHE_KEY) || "{}");
+    all[mese] = data;
+    localStorage.setItem(_REPORT_CACHE_KEY, JSON.stringify(all));
+  } catch (e) {}
+}
+
 async function _drawReport(mese) {
   await _loadChartJs();
   // Il report riguarda solo mesi CONCLUSI: il più recente è il mese scorso.
   _reportMese = mese || _reportMese || _lastYm();
   const v = document.getElementById("view-report");
-  let data;
-  try {
-    data = await apiPost("lift_get_month_report", { mese: _reportMese });
-  } catch (e) {
-    v.innerHTML = `<div class="empty-state">Errore: ${escapeHtml(e.message || e)}</div>`;
-    return;
-  }
-  if (!data || data.status !== "OK") {
-    v.innerHTML = `<div class="empty-state">Nessun dato report.</div>`;
-    return;
+
+  // 1. cache locale: se ho già questo mese, lo mostro ISTANTANEO (no rete/spinner)
+  let data = _readReportCache(_reportMese);
+
+  // 2. altrimenti lo chiedo al backend
+  if (!data) {
+    try {
+      data = await apiPost("lift_get_month_report", { mese: _reportMese });
+    } catch (e) {
+      v.innerHTML = `<div class="empty-state">Errore: ${escapeHtml(e.message || e)}</div>`;
+      return;
+    }
+    if (!data || data.status !== "OK") {
+      v.innerHTML = `<div class="empty-state">Nessun dato report.</div>`;
+      return;
+    }
+    // salvo in cache solo i mesi conclusi (immutabili): mese < mese corrente
+    if (_reportMese < _thisYm()) _writeReportCache(_reportMese, data);
   }
 
   // "avanti" disabilitato una volta arrivati al mese scorso (niente mese corrente)

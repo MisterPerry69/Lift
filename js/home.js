@@ -316,25 +316,31 @@ function _renderResumeBanner() {
   if (btn) btn.onclick = () => resumeSessionIfAny();
 }
 
-/** Banner "Report di [mese] pronto" nella prima settimana del mese. Resta finché
- *  non apri il report (poi lo segno visto in localStorage per non ri-mostrarlo). */
-async function _renderReportBanner() {
+/** Banner "Report di [mese] pronto" nei primi 7 giorni del mese. Resta finché
+ *  non apri il report (poi lo segno visto in localStorage per non ri-mostrarlo).
+ *  Decisione tutta frontend: non dipende dal backend, così è robusto. */
+function _renderReportBanner() {
   const el = document.getElementById("report-banner");
   if (!el) return;
   el.hidden = true;
-  let notice;
-  try {
-    const res = await apiGet("lift_get_report_notice", {}, { silent: true });
-    notice = res && res.notice;
-  } catch (e) {
-    return; // in caso di errore, nessun banner (non blocco la home)
-  }
-  if (!notice || !notice.mese) return;
+
+  // solo nei primi 7 giorni del mese
+  const now = new Date();
+  if (now.getDate() > 7) return;
+
+  // il report pronto è quello del mese SCORSO
+  const meseScorso =
+    typeof _shiftYm === "function"
+      ? _shiftYm(now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0"), -1)
+      : null;
+  if (!meseScorso) return;
+
   // già aperto/dismesso questo mese?
   try {
-    if (localStorage.getItem("lift_report_seen") === notice.mese) return;
+    if (localStorage.getItem("lift_report_seen") === meseScorso) return;
   } catch (e) {}
 
+  const notice = { mese: meseScorso };
   const label = _monthLabelIt(notice.mese);
   el.hidden = false;
   el.innerHTML = `
