@@ -965,15 +965,10 @@
 }
 .ov-item-dots { margin-top: var(--sp-2); }
 
-/* Editor correzione serie: sopra la panoramica (z 220) e centrato in alto,
-   non in basso, così compare SOPRA la lista da cui lo apri. */
+/* Editor correzione serie: bottom sheet come le altre, ma sopra la panoramica
+   (z 220) così NON si apre sotto la lista da cui lo apri. */
 #editset-modal {
   z-index: 240;
-  align-items: flex-start;
-}
-#editset-modal .num-sheet {
-  margin-top: 12vh;
-  border-radius: var(--radius);
 }
 /* Tab Peso | Reps dentro l'editor di correzione. */
 .es-tabs {
