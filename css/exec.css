@@ -965,21 +965,38 @@
 }
 .ov-item-dots { margin-top: var(--sp-2); }
 
-/* Editor correzione serie (due campi peso/reps affiancati). */
-.editset-row {
-  display: flex;
-  gap: var(--sp-3);
-  margin: var(--sp-3) 0;
+/* Editor correzione serie: sopra la panoramica (z 220) e centrato in alto,
+   non in basso, così compare SOPRA la lista da cui lo apri. */
+#editset-modal {
+  z-index: 240;
+  align-items: flex-start;
 }
-.editset-field { flex: 1; }
-.editset-lab {
-  font-size: var(--fs-micro);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-dim-2);
+#editset-modal .num-sheet {
+  margin-top: 12vh;
+  border-radius: var(--radius);
+}
+/* Tab Peso | Reps dentro l'editor di correzione. */
+.es-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  margin: var(--sp-3) 0 var(--sp-4);
+}
+.es-tab {
+  padding: 9px var(--sp-3);
+  font-size: var(--fs-small);
   font-weight: 700;
-  margin-bottom: var(--sp-2);
+  color: var(--text-dim-2);
+  border-radius: var(--radius-pill);
   text-align: center;
+  letter-spacing: 0.04em;
+}
+.es-tab.active {
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 /* Vista blocco completato */

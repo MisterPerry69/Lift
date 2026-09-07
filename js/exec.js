@@ -1149,6 +1149,7 @@ function openOverview() {
 
 /**
  * Editor per correggere peso/reps di una serie GIÀ registrata (ex.done[idx]).
+ * Due tab PESO | REPS, ciascuno col pannello numerico completo (chip + −/+).
  * onDone: callback dopo il salvataggio (es. ridisegnare la panoramica).
  */
 function openEditDoneSet(idx, onDone) {
@@ -1166,44 +1167,43 @@ function openEditDoneSet(idx, onDone) {
   }
   const w0 = d.weight != null ? d.weight : 0;
   const r0 = d.reps != null ? d.reps : 0;
+
   m.innerHTML = `
     <div class="num-sheet">
-      <div class="num-sheet-label">Correggi serie · ${escapeHtml(d.exerciseName || "")}</div>
-      <div class="editset-row">
-        <div class="editset-field">
-          <div class="editset-lab">Peso (kg)</div>
-          <div class="num-display">
-            <button class="num-step" id="es-w-minus">−</button>
-            <input id="es-w" readonly inputmode="decimal" value="${_fmtNum(w0)}" />
-            <button class="num-step" id="es-w-plus">+</button>
-          </div>
-        </div>
-        <div class="editset-field">
-          <div class="editset-lab">Reps</div>
-          <div class="num-display">
-            <button class="num-step" id="es-r-minus">−</button>
-            <input id="es-r" readonly inputmode="numeric" value="${r0}" />
-            <button class="num-step" id="es-r-plus">+</button>
-          </div>
-        </div>
+      <div class="num-sheet-label">Correggi · ${escapeHtml(d.exerciseName || "")}</div>
+      <div class="es-tabs">
+        <button type="button" class="es-tab active" data-tab="weight">Peso</button>
+        <button type="button" class="es-tab" data-tab="reps">Reps</button>
       </div>
+      <div class="np-host" id="es-host"></div>
       <button class="num-confirm" id="es-ok">Salva correzione</button>
     </div>`;
-  const wIn = m.querySelector("#es-w");
-  const rIn = m.querySelector("#es-r");
-  m.querySelector("#es-w-minus").onclick = () =>
-    (wIn.value = _fmtNum(round(num(wIn.value) - 1.25, "weight")));
-  m.querySelector("#es-w-plus").onclick = () =>
-    (wIn.value = _fmtNum(round(num(wIn.value) + 1.25, "weight")));
-  m.querySelector("#es-r-minus").onclick = () =>
-    (rIn.value = Math.max(0, (parseInt(rIn.value, 10) || 0) - 1));
-  m.querySelector("#es-r-plus").onclick = () =>
-    (rIn.value = (parseInt(rIn.value, 10) || 0) + 1);
+
+  const host = m.querySelector("#es-host");
+  // valori correnti mantenuti tra i due tab
+  const cur = { weight: round(w0, "weight"), reps: round(r0, "reps") };
+  let panel = null;
+  let activeTab = "weight";
+
+  const mount = (tab) => {
+    // prima di cambiare tab, salvo il valore del pannello attuale
+    if (panel) cur[activeTab] = panel.getValue();
+    activeTab = tab;
+    m.querySelectorAll(".es-tab").forEach((t) =>
+      t.classList.toggle("active", t.dataset.tab === tab)
+    );
+    panel = _renderNumPanel(host, tab, cur[tab]);
+  };
+  mount("weight");
+
+  m.querySelectorAll(".es-tab").forEach((t) => {
+    t.onclick = () => mount(t.dataset.tab);
+  });
+
   m.querySelector("#es-ok").onclick = () => {
-    const nw = round(num(wIn.value), "weight");
-    const nr = Math.max(0, parseInt(rIn.value, 10) || 0);
-    ex.done[idx].weight = nw;
-    ex.done[idx].reps = nr;
+    if (panel) cur[activeTab] = panel.getValue(); // salvo il tab visibile
+    ex.done[idx].weight = round(cur.weight, "weight");
+    ex.done[idx].reps = Math.max(0, parseInt(cur.reps, 10) || 0);
     persist();
     m.classList.remove("open");
     if (onDone) onDone();
@@ -1385,85 +1385,66 @@ function startSessionTimer() {
   sessTick = setInterval(tick, 1000);
 }
 
-/* ---------- modale numerica ---------- */
+/* ---------- pannello numerico riusabile (display + chip + long-press) ---------- */
 
-let numCtx = null;
-function openNum(kind, current) {
-  numCtx = { kind: kind, value: current };
-  let m = document.getElementById("num-modal");
-  if (!m) {
-    m = document.createElement("div");
-    m.id = "num-modal";
-    m.className = "num-modal";
-    m.innerHTML = `
-      <div class="num-sheet">
-        <div class="num-sheet-label" id="num-label">Peso (kg)</div>
-        <div class="num-display">
-          <button class="num-step" id="num-minus">−</button>
-          <input id="num-input" readonly inputmode="decimal" />
-          <button class="num-step" id="num-plus">+</button>
-        </div>
-        <div class="num-chips" id="num-chips"></div>
-        <button class="num-confirm" id="num-ok">Conferma</button>
-      </div>`;
-    document.body.appendChild(m);
-    m.addEventListener("click", (e) => {
-      if (e.target === m) m.classList.remove("open");
-    });
-  }
-  const label = m.querySelector("#num-label");
-  if (label) label.textContent = kind === "weight" ? "Peso (kg)" : "Ripetizioni";
-  const input = m.querySelector("#num-input");
-  input.value = current || "";
-  // PESO: chip che AGGIUNGONO (+incremento). REPS: chip PRESET che impostano il valore.
+/**
+ * Monta dentro `host` un pannello numerico (display −/+ , chip rapidi) per
+ * kind "weight" o "reps". Ritorna { getValue } per leggere il valore corrente.
+ * Riusato da openNum (campo singolo) e da openEditDoneSet (tab peso/reps).
+ */
+function _renderNumPanel(host, kind, current) {
   const chips =
-    kind === "weight"
-      ? [1.25, 2.5, 5, 10, 15, 20]
-      : [6, 8, 10, 12, 15];
-  const isPresetChips = kind !== "weight"; // reps = preset diretti
-  const chipsWrap = m.querySelector("#num-chips");
+    kind === "weight" ? [1.25, 2.5, 5, 10, 15, 20] : [6, 8, 10, 12, 15];
+  const isPreset = kind !== "weight"; // reps = preset; peso = incremento
 
-  // PESO: i chip possono SOMMARE (default) o SOTTRARRE. Si passa in modalità
-  // "sottrai" tenendo PREMUTO il tasto − (long-press): la riga di chip diventa
-  // negativa. Un tap breve su − resta il -1 di sempre.
-  numCtx.subtract = false;
+  host.innerHTML = `
+    <div class="num-display">
+      <button class="num-step np-minus" type="button">−</button>
+      <input class="np-input" readonly inputmode="${kind === "weight" ? "decimal" : "numeric"}" />
+      <button class="num-step np-plus" type="button">+</button>
+    </div>
+    <div class="num-chips np-chips"></div>`;
+
+  const input = host.querySelector(".np-input");
+  input.value = current != null && current !== "" ? _fmtNum(current) : "";
+  const chipsWrap = host.querySelector(".np-chips");
+  const state = { subtract: false, suppressClick: false };
+
   const renderChips = () => {
     chipsWrap.innerHTML = chips
       .map((c) => {
-        const sign = isPresetChips ? "" : numCtx.subtract ? "−" : "+";
-        return `<button class="num-chip${
-          !isPresetChips && numCtx.subtract ? " num-chip-neg" : ""
+        const sign = isPreset ? "" : state.subtract ? "−" : "+";
+        return `<button type="button" class="num-chip${
+          !isPreset && state.subtract ? " num-chip-neg" : ""
         }" data-c="${c}">${sign}${_fmtNum(c)}</button>`;
       })
       .join("");
     chipsWrap.querySelectorAll(".num-chip").forEach((ch) => {
       ch.onclick = () => {
         const c = parseFloat(ch.dataset.c);
-        if (isPresetChips) {
-          input.value = round(c, kind); // reps: imposta
-        } else {
-          const delta = numCtx.subtract ? -c : c; // peso: somma o sottrae
-          input.value = round(num(input.value) + delta, kind);
+        if (isPreset) input.value = _fmtNum(round(c, kind));
+        else {
+          const delta = state.subtract ? -c : c;
+          input.value = _fmtNum(round(num(input.value) + delta, kind));
         }
       };
     });
   };
   renderChips();
 
-  const step = 1;
-  const minusBtn = m.querySelector("#num-minus");
+  const minusBtn = host.querySelector(".np-minus");
   minusBtn.onclick = () =>
-    (input.value = round(num(input.value) - step, kind));
-  m.querySelector("#num-plus").onclick = () =>
-    (input.value = round(num(input.value) + step, kind));
+    (input.value = _fmtNum(round(num(input.value) - 1, kind)));
+  host.querySelector(".np-plus").onclick = () =>
+    (input.value = _fmtNum(round(num(input.value) + 1, kind)));
 
-  // long-press sul − → toggle modalità sottrazione dei chip (solo peso)
+  // long-press sul − → chip negativi (solo peso)
   if (kind === "weight") {
     let lpTimer = null;
     const startLP = () => {
       lpTimer = setTimeout(() => {
-        lpTimer = null; // segna che il long-press è scattato (così il click non fa -1)
-        numCtx.subtract = !numCtx.subtract;
+        lpTimer = null;
+        state.subtract = !state.subtract;
         renderChips();
         try {
           if (navigator.vibrate) navigator.vibrate(30);
@@ -1476,25 +1457,52 @@ function openNum(kind, current) {
         lpTimer = null;
       }
     };
-    // se il long-press è scattato, sopprimo il click -1 successivo
-    minusBtn.addEventListener("click", (e) => {
-      if (numCtx._suppressClick) {
-        numCtx._suppressClick = false;
-        e.stopImmediatePropagation();
-        e.preventDefault();
-      }
-    }, true);
+    minusBtn.addEventListener(
+      "click",
+      (e) => {
+        if (state.suppressClick) {
+          state.suppressClick = false;
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      },
+      true
+    );
     minusBtn.addEventListener("touchstart", startLP, { passive: true });
     minusBtn.addEventListener("mousedown", startLP);
     ["touchend", "touchcancel", "mouseup", "mouseleave"].forEach((ev) =>
       minusBtn.addEventListener(ev, () => {
-        if (!lpTimer) numCtx._suppressClick = true; // long-press era scattato
+        if (!lpTimer) state.suppressClick = true;
         cancelLP();
       })
     );
   }
+
+  return { getValue: () => round(num(input.value), kind) };
+}
+
+/* ---------- modale numerica (campo singolo) ---------- */
+
+function openNum(kind, current) {
+  let m = document.getElementById("num-modal");
+  if (!m) {
+    m = document.createElement("div");
+    m.id = "num-modal";
+    m.className = "num-modal";
+    document.body.appendChild(m);
+    m.addEventListener("click", (e) => {
+      if (e.target === m) m.classList.remove("open");
+    });
+  }
+  m.innerHTML = `
+    <div class="num-sheet">
+      <div class="num-sheet-label">${kind === "weight" ? "Peso (kg)" : "Ripetizioni"}</div>
+      <div class="np-host"></div>
+      <button class="num-confirm" id="num-ok">Conferma</button>
+    </div>`;
+  const panel = _renderNumPanel(m.querySelector(".np-host"), kind, current);
   m.querySelector("#num-ok").onclick = () => {
-    const v = round(num(input.value), kind);
+    const v = panel.getValue();
     if (kind === "weight") document.getElementById("exw").textContent = v;
     else document.getElementById("exr").textContent = v;
     m.classList.remove("open");
