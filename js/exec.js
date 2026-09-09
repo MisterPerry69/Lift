@@ -538,7 +538,7 @@ function renderExec() {
         <div class="exec-prev">${escapeHtml(sugLabel)}</div>
         <div class="exec-controls">
           <button class="big-num" id="ex-weight">
-            <div class="bn-val" id="exw">${sugW != null ? sugW : "—"}</div>
+            <div class="bn-val" id="exw">${sugW != null ? _fmtNum(sugW) : "—"}</div>
             <div class="bn-lab">peso kg</div>
           </button>
           <button class="big-check" id="ex-check" aria-label="Conferma">${iconSvg(
@@ -573,7 +573,7 @@ function renderExec() {
     : addWarmupSet;
   document.getElementById("ex-note").onclick = () => openNoteEditor(ex.bi);
   document.getElementById("ex-weight").onclick = () =>
-    openNum("weight", parseFloat(document.getElementById("exw").textContent) || 0);
+    openNum("weight", num(document.getElementById("exw").textContent));
   document.getElementById("ex-reps").onclick = () =>
     openNum("reps", parseInt(document.getElementById("exr").textContent, 10) || targetNum);
   document.getElementById("ex-check").onclick = confirmSet;
@@ -1030,7 +1030,7 @@ function doneSummaryForBlock(bi) {
   return dn
     .map((d) => {
       if (d.type === "duration") return (d.durataMin || "?") + " min";
-      const w = d.weight != null ? d.weight : "?";
+      const w = d.weight != null ? _fmtNum(d.weight) : "?";
       const r = d.reps != null ? d.reps : "?";
       return w + "×" + r;
     })
@@ -1503,14 +1503,17 @@ function openNum(kind, current) {
   const panel = _renderNumPanel(m.querySelector(".np-host"), kind, current);
   m.querySelector("#num-ok").onclick = () => {
     const v = panel.getValue();
-    if (kind === "weight") document.getElementById("exw").textContent = v;
+    if (kind === "weight") document.getElementById("exw").textContent = _fmtNum(v);
     else document.getElementById("exr").textContent = v;
     m.classList.remove("open");
   };
   m.classList.add("open");
 }
 function num(v) {
-  return parseFloat(v) || 0;
+  // Accetta sia "71.25" sia "71,25" (formato IT): la virgola va convertita in
+  // punto PRIMA di parseFloat, altrimenti "71,25" → 71 e i decimali si perdono.
+  if (typeof v === "number") return v;
+  return parseFloat(String(v).replace(",", ".")) || 0;
 }
 /** Formatta un numero in stile IT: 1.25 → "1,25", 5 → "5". */
 function _fmtNum(n) {
@@ -1527,7 +1530,7 @@ function confirmSet() {
   const b = curBlock();
   const exo = curExerciseOfBlock(b);
   const set = curSet();
-  const weight = parseFloat(document.getElementById("exw").textContent) || 0;
+  const weight = num(document.getElementById("exw").textContent);
   const reps = parseInt(document.getElementById("exr").textContent, 10) || 0;
 
   ex.done.push({
@@ -1946,14 +1949,17 @@ function _beepWebAudio() {
   } catch (e) {}
 }
 
-/** Beep via elemento <audio> (file WAV). */
+/** Beep via elemento <audio> (file WAV). Ritorna true se il play è partito. */
 function _beepFile() {
   try {
-    if (!_beepEl) return;
+    if (!_beepEl) return false;
     _beepEl.currentTime = 0;
     const p = _beepEl.play();
     if (p && p.catch) p.catch(() => {});
-  } catch (e) {}
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 /** Vibrazione (Android; iOS Safari non la supporta e la ignora). */
@@ -1981,11 +1987,13 @@ function _flashRest() {
   } catch (e) {}
 }
 
-/** Feedback completo di fine pausa: tutti i canali insieme. */
+/** Feedback completo di fine pausa.
+ *  UN SOLO suono: prima il file <audio> (più affidabile con Spotify su iOS);
+ *  se non parte, ripiego sul Web Audio. NON entrambi (su Android si sentiva
+ *  un doppio beep sovrapposto). Vibrazione e flash sono canali diversi. */
 function beep() {
   _unlockAudio(); // assicura context/elemento pronti
-  _beepWebAudio();
-  _beepFile();
+  if (!_beepFile()) _beepWebAudio(); // fallback solo se il file non parte
   _vibrate();
   _flashRest();
 }
