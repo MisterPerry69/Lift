@@ -86,17 +86,33 @@ function _sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/** fetch con TIMEOUT: senza, una risposta appesa del backend blocca la app per
+ *  minuti (splash ferma a 3/4). Con AbortController fallisce in ms e si riprova. */
+async function _fetchTimeout(url, ms) {
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const t = ctrl ? setTimeout(() => ctrl.abort(), ms) : null;
+  try {
+    return await fetch(url, {
+      redirect: "follow",
+      signal: ctrl ? ctrl.signal : undefined,
+    });
+  } finally {
+    if (t) clearTimeout(t);
+  }
+}
+
 /**
  * GET verso GAS con RETRY automatico. GAS su rete instabile (o durante un
  * redirect intermedio / throttling) risponde a volte con HTML invece di JSON,
  * o la fetch fallisce del tutto: un singolo colpo diventava "Connessione
  * fallita" fatale. Le GET sono idempotenti → sicuro riprovare con backoff.
+ * Ogni tentativo ha un TIMEOUT (12s) così un backend appeso non blocca minuti.
  */
 async function _getJsonWithRetry(url, tries = 3) {
   let lastErr;
   for (let i = 0; i < tries; i++) {
     try {
-      const res = await fetch(url, { redirect: "follow" });
+      const res = await _fetchTimeout(url, 12000);
       return await _parse(res); // lancia su HTML/non-JSON
     } catch (e) {
       lastErr = e;
@@ -140,11 +156,23 @@ async function apiPost(action, payload = {}) {
     if (_INVALIDATES_BOOTSTRAP[action]) {
       apiInvalidate("lift_get_data");
     }
+    // Le action che toccano le SESSIONI invalidano anche storico + dettagli
+    // (altrimenti dopo un salvataggio/modifica lo storico resta quello vecchio).
+    if (_INVALIDATES_HISTORY[action]) {
+      apiInvalidate("lift_get_history");
+      apiInvalidate("lift_get_session");
+    }
     return data;
   } finally {
     _hideLoading();
   }
 }
+
+// Quali action invalidano la cache di storico + dettaglio sessione
+const _INVALIDATES_HISTORY = {
+  lift_save_session: true,
+  lift_edit_session: true,
+};
 
 // Quali action invalidano la cache di lift_get_data
 const _INVALIDATES_BOOTSTRAP = {

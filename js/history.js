@@ -20,7 +20,8 @@ async function openHistory() {
   let sessions = [];
   let prs = [];
   try {
-    const res = await apiPost("lift_get_history", {});
+    // apiGet → cache 5 min: entra/esci dallo storico non ricarica ogni volta.
+    const res = await apiGet("lift_get_history", {});
     sessions = (res && res.sessions) || [];
     // i PR li prendo dal bootstrap (cache), per il badge ★
     const boot = await apiGet("lift_get_data", {}, { silent: true });
@@ -153,7 +154,8 @@ async function openSessionDetail(sessionId) {
 
   let res;
   try {
-    res = await apiPost("lift_get_session", { sessionId: sessionId });
+    // apiGet → cache: una sessione passata è immutabile, la carico una volta sola.
+    res = await apiGet("lift_get_session", { sessionId: sessionId });
   } catch (e) {
     root.innerHTML = `<div class="empty-state">Errore: ${escapeHtml(
       e.message || String(e)
