@@ -15,52 +15,133 @@ async function openHistory() {
     <div id="hist-list" class="history-list"></div>
   `;
   document.getElementById("hist-back").onclick = openProfile;
-
-  const data = await apiGet("lift_get_data", {}, { silent: true });
-  const sessions = (data && data.recentSessions) || [];
-  const prs = (data && data.prs) || [];
-
-  // Conto PR per sessione
-  const prCountBySession = {};
-  prs.forEach((p) => {
-    const sid = p.sessionId;
-    if (!sid) return;
-    prCountBySession[sid] = (prCountBySession[sid] || 0) + 1;
-  });
-
   const list = document.getElementById("hist-list");
+
+  let sessions = [];
+  let prs = [];
+  try {
+    const res = await apiPost("lift_get_history", {});
+    sessions = (res && res.sessions) || [];
+    // i PR li prendo dal bootstrap (cache), per il badge ★
+    const boot = await apiGet("lift_get_data", {}, { silent: true });
+    prs = (boot && boot.prs) || [];
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state">Errore nel caricamento dello storico.</div>`;
+    return;
+  }
+
   if (sessions.length === 0) {
     list.innerHTML = `<div class="empty-state">Nessuna sessione ancora.<br>Inizia una scheda dalla home.</div>`;
     return;
   }
 
-  list.innerHTML = sessions
-    .map((s) => {
-      const d = s.startedAt ? new Date(s.startedAt) : new Date();
-      const day = d.getDate();
-      const mon = d.toLocaleDateString("it-IT", { month: "short" }).replace(".", "");
-      const dur = s.durationSec
-        ? Math.round(s.durationSec / 60) + " min"
-        : "—";
-      const prs = prCountBySession[s.id] || 0;
-      return `
-        <button class="history-item" data-sid="${s.id}">
-          <div class="hi-date">
-            <div class="d-day">${day}</div>
-            <div class="d-mon">${mon}</div>
-          </div>
-          <div class="hi-body">
-            <div class="hi-name">${escapeHtml(s.templateName || "Sessione")}</div>
-            <div class="hi-meta">${dur}</div>
-          </div>
-          ${prs ? `<div class="hi-prs">★ ${prs}</div>` : ""}
-        </button>`;
-    })
-    .join("");
+  // conteggio PR per sessione (per il badge ★)
+  const prCountBySession = {};
+  prs.forEach((p) => {
+    if (p.sessionId) prCountBySession[p.sessionId] = (prCountBySession[p.sessionId] || 0) + 1;
+  });
+
+  list.innerHTML = _renderHistoryGroups(sessions, prCountBySession);
 
   list.querySelectorAll(".history-item").forEach((btn) => {
     btn.onclick = () => openSessionDetail(btn.dataset.sid);
   });
+}
+
+/**
+ * Raggruppa lo storico: prima per PROGRAMMA (i più recenti in alto), dentro
+ * ogni programma per SETTIMANA (dalla più recente). Gli allenamenti senza
+ * programma finiscono nel gruppo "Schede libere" in fondo.
+ */
+function _renderHistoryGroups(sessions, prCountBySession) {
+  // 1. separo per programma, mantenendo l'ordine di comparsa (sessions già
+  //    ordinate dal più recente).
+  const byProgram = new Map(); // programId → { name, sessions[] }
+  const libere = [];
+  sessions.forEach((s) => {
+    if (s.programId) {
+      if (!byProgram.has(s.programId)) {
+        byProgram.set(s.programId, {
+          name: s.programName || "Programma",
+          weeks: s.programWeeks || null,
+          sessions: [],
+        });
+      }
+      byProgram.get(s.programId).sessions.push(s);
+    } else {
+      libere.push(s);
+    }
+  });
+
+  const blocks = [];
+
+  // 2. un blocco per programma, con sotto-blocchi per settimana
+  byProgram.forEach((prog) => {
+    // raggruppo le sessioni del programma per settimana
+    const byWeek = new Map(); // week → sessions[]
+    prog.sessions.forEach((s) => {
+      const wk = s.week != null ? s.week : "?";
+      if (!byWeek.has(wk)) byWeek.set(wk, []);
+      byWeek.get(wk).push(s);
+    });
+    // settimane dalla più alta (recente) alla più bassa
+    const weeks = [...byWeek.keys()].sort((a, b) => {
+      const na = a === "?" ? -1 : a;
+      const nb = b === "?" ? -1 : b;
+      return nb - na;
+    });
+
+    const weekBlocks = weeks
+      .map((wk) => {
+        const items = byWeek.get(wk).map((s) => _historyItemHtml(s, prCountBySession)).join("");
+        const label = wk === "?" ? "Settimana n/d" : "Settimana " + wk;
+        return `
+          <div class="hist-week">
+            <div class="hist-week-lab">${label}</div>
+            ${items}
+          </div>`;
+      })
+      .join("");
+
+    blocks.push(`
+      <div class="hist-group">
+        <div class="hist-group-head">${escapeHtml(prog.name)}</div>
+        ${weekBlocks}
+      </div>`);
+  });
+
+  // 3. schede libere in fondo
+  if (libere.length) {
+    const items = libere.map((s) => _historyItemHtml(s, prCountBySession)).join("");
+    blocks.push(`
+      <div class="hist-group">
+        <div class="hist-group-head">Schede libere</div>
+        ${items}
+      </div>`);
+  }
+
+  return blocks.join("");
+}
+
+/** Riga singola dello storico (data + nome + durata + PR). */
+function _historyItemHtml(s, prCountBySession) {
+  const d = s.startedAt ? new Date(s.startedAt) : new Date();
+  const day = d.getDate();
+  const mon = d.toLocaleDateString("it-IT", { month: "short" }).replace(".", "");
+  const dur = s.durationSec ? Math.round(s.durationSec / 60) + " min" : "—";
+  const prs = prCountBySession[s.id] || 0;
+  return `
+    <button class="history-item" data-sid="${s.id}">
+      <div class="hi-date">
+        <div class="d-day">${day}</div>
+        <div class="d-mon">${mon}</div>
+      </div>
+      <div class="hi-body">
+        <div class="hi-name">${escapeHtml(s.templateName || "Sessione")}</div>
+        <div class="hi-meta">${dur}</div>
+      </div>
+      ${prs ? `<div class="hi-prs">★ ${prs}</div>` : ""}
+    </button>`;
 }
 
 /* ---------- Dettaglio sessione ---------- */

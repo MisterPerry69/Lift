@@ -51,6 +51,7 @@ const LOADING_MSG = {
   lift_get_data: "Carico i tuoi dati…",
   lift_get_template: "Preparo la scheda…",
   lift_get_session: "Carico la sessione…",
+  lift_get_history: "Carico lo storico…",
   lift_save_template: "Salvo la scheda…",
   lift_save_session: "Salvo la sessione…",
   lift_log_weight: "Salvo il peso…",

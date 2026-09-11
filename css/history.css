@@ -267,3 +267,35 @@
   margin: 2px 0 var(--sp-2) 26px;
   line-height: 1.4;
 }
+
+/* ============================================
+   Storico raggruppato: Programma → Settimana
+   ============================================ */
+.hist-group {
+  margin-bottom: var(--sp-5);
+}
+.hist-group-head {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--text);
+  margin: var(--sp-4) 0 var(--sp-3);
+  letter-spacing: 0.01em;
+}
+.hist-week {
+  margin-bottom: var(--sp-3);
+}
+.hist-week-lab {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: var(--fs-micro);
+  color: var(--accent);
+  font-weight: 700;
+  margin: var(--sp-2) 0 var(--sp-2);
+  padding-left: 2px;
+}
+/* dentro un gruppo le righe hanno il loro gap */
+.hist-week .history-item,
+.hist-group > .history-item {
+  margin-bottom: var(--sp-2);
+}
