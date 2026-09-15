@@ -215,9 +215,12 @@ function _fmtPeriodSets(sets) {
     .join("  ");
 }
 
-function _renderProgramWorkoutDetail(prog, wk) {
+function _renderProgramWorkoutDetail(prog, wk, viewWeek) {
   const root = document.getElementById("screen-scheda-detail");
-  const wi = (prog.currentWeek || 1) - 1;
+  const totWeeks = prog.weeks || 1;
+  // settimana visualizzata (dropdown); default = quella corrente del programma
+  const shownWeek = Math.min(totWeeks, Math.max(1, viewWeek || prog.currentWeek || 1));
+  const wi = shownWeek - 1;
   const blocks = (wk.structure && wk.structure.blocks) || [];
 
   const blocksHtml = blocks
@@ -248,12 +251,24 @@ function _renderProgramWorkoutDetail(prog, wk) {
     })
     .join("");
 
+  // opzioni del dropdown settimana (marca quella corrente del programma)
+  const weekOpts = [];
+  for (let w = 1; w <= totWeeks; w++) {
+    const cur = w === (prog.currentWeek || 1) ? " (in corso)" : "";
+    weekOpts.push(
+      `<option value="${w}"${w === shownWeek ? " selected" : ""}>Settimana ${w}${cur}</option>`
+    );
+  }
+
   root.innerHTML = `
     <div class="history-head">
       <button class="icon-btn" id="pwd-back" aria-label="Indietro">${iconSvg("arrow-left")}</button>
       <div class="sch-detail-name">${escapeHtml(wk.name)}</div>
     </div>
-    <div class="sch-detail-notes">${escapeHtml(prog.nome)} · Settimana ${prog.currentWeek}/${prog.weeks}</div>
+    <div class="sch-week-bar">
+      <span class="sch-week-prog">${escapeHtml(prog.nome)}</span>
+      <select class="sch-week-select" id="pwd-week">${weekOpts.join("")}</select>
+    </div>
     ${blocksHtml || '<div class="empty-state">Nessun esercizio</div>'}
     <button class="save-template-btn" id="pwd-start">${iconSvg("play")} Inizia ${escapeHtml(wk.name)}</button>
     <button class="add-block-btn" id="pwd-edit">${iconSvg("edit")} Modifica valori scheda</button>
@@ -263,6 +278,11 @@ function _renderProgramWorkoutDetail(prog, wk) {
   document.getElementById("pwd-start").onclick = () => startProgramWorkout(prog.id, wk.id);
   document.getElementById("pwd-edit").onclick = () =>
     openProgramEditEditor(prog, () => openProgramWorkoutDetail(prog.id, wk.id));
+  // cambio settimana → ri-renderizzo mostrando quella scelta (solo visualizzazione)
+  const weekSel = document.getElementById("pwd-week");
+  if (weekSel)
+    weekSel.onchange = () =>
+      _renderProgramWorkoutDetail(prog, wk, parseInt(weekSel.value, 10) || 1);
   root.querySelectorAll("[data-swap]").forEach((btn) => {
     btn.onclick = () =>
       openSwapExercise(prog, wk, parseInt(btn.dataset.swap, 10));
