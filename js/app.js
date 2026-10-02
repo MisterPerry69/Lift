@@ -153,6 +153,7 @@ async function boot() {
   screens["exercise-detail"] = document.getElementById("screen-exercise-detail");
   screens.schede = document.getElementById("screen-schede");
   screens["scheda-detail"] = document.getElementById("screen-scheda-detail");
+  screens.ceck = document.getElementById("screen-ceck");
 
   // se c'e una sessione attiva non terminata, riprendila
   if (typeof resumeSessionIfAny === "function" && resumeSessionIfAny()) {

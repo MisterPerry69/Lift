@@ -97,19 +97,9 @@
   border-color: var(--border);
 }
 
-/* Voce CECK: evidenziata di verde. */
+/* Voce CECK: solo il bordo verde, resto del bottone invariato. */
 .prof-item-green {
   border-color: #3fae5a;
-  background: rgba(63, 174, 90, 0.08);
-}
-.prof-item-green .pi-icon {
-  background: rgba(63, 174, 90, 0.16);
-  color: #3fae5a;
-}
-.prof-item-green .pi-text {
-  color: #3fae5a;
-  font-weight: 800;
-  letter-spacing: 0.06em;
 }
 
 .prof-item .pi-icon {
