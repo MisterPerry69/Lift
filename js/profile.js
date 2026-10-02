@@ -25,7 +25,7 @@ function _profileHtml(p) {
     : "nessuna sessione ancora";
   const weightTxt = p.weightKg ? p.weightKg + " kg" : "—";
   const items = [
-    { id: "ceck", icon: "check", label: "CECK", green: true },
+    { id: "ceck", icon: "check", label: "Ceck", green: true },
     { id: "schede", icon: "clipboard", label: "Schede allenamenti" },
     { id: "esercizi", icon: "library", label: "Esercizi" },
     { id: "peso", icon: "scale", label: "Aggiorna peso" },

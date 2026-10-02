@@ -181,3 +181,33 @@
   background-position: right var(--sp-4) center;
   padding-right: var(--sp-7);
 }
+
+/* Tasto "Unisci esercizio" nel dettaglio esercizio (fonde doppioni). */
+.exd-merge-btn {
+  display: block;
+  width: 100%;
+  margin-top: var(--sp-6);
+  padding: var(--sp-3);
+  background: transparent;
+  color: var(--text-dim);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.exd-merge-btn:active {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.exd-merge-hint {
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  line-height: 1.4;
+  margin-top: var(--sp-2);
+  text-align: center;
+}

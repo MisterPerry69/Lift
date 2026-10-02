@@ -179,8 +179,101 @@ function _openExerciseDetail(ref) {
             <p>Non disponibili per questo esercizio.</p>
           </div>`
     }
+
+    <button class="exd-merge-btn" id="exd-merge">Unisci a un altro esercizio</button>
+    <div class="exd-merge-hint">Usalo per fondere due doppioni (es. stesso esercizio con nomi diversi): spostо serie, PR e schede sull'altro.</div>
   `;
   document.getElementById("exd-back").onclick = openLibrary;
+  const mergeBtn = document.getElementById("exd-merge");
+  if (mergeBtn) mergeBtn.onclick = () => _openMergePicker(ex);
+}
+
+/**
+ * Picker per fondere l'esercizio corrente (from) in un altro (to): sceglie il
+ * bersaglio dal catalogo. Dopo il merge, serie/PR/schede del corrente passano
+ * all'altro e la voce corrente sparisce. Solo esercizi del catalogo curato.
+ */
+function _openMergePicker(fromEx) {
+  const fromId = String(fromEx.ref).replace(/^ex:/, "").replace(/^custom:/, "");
+  const catalog = (_libState.catalog || EXERCISES_CATALOG || []).filter(
+    (x) => x.id !== fromId
+  );
+  let m = document.getElementById("merge-modal");
+  if (!m) {
+    m = document.createElement("div");
+    m.id = "merge-modal";
+    m.className = "ov-modal";
+    document.body.appendChild(m);
+    m.addEventListener("click", (e) => {
+      if (e.target === m) m.classList.remove("open");
+    });
+  }
+  const itemsHtml = catalog
+    .map(
+      (e) => `
+      <button class="addex-item" data-id="${escapeHtml(e.id)}">
+        <span class="addex-name">${escapeHtml(e.nome)}</span>
+        <span class="addex-meta">${escapeHtml(e.gruppo || "")}</span>
+      </button>`
+    )
+    .join("");
+  m.innerHTML = `
+    <div class="ov-sheet">
+      <div class="ov-head">
+        <div class="ov-title" style="font-size:1.2rem">Unisci "${escapeHtml(fromEx.name)}" a…</div>
+        <button class="ov-close" id="merge-close">✕</button>
+      </div>
+      <input class="addex-search" id="merge-search" placeholder="Cerca l'esercizio giusto…" />
+      <div class="ov-list" id="merge-list">${itemsHtml || '<div class="empty-state">Catalogo vuoto</div>'}</div>
+    </div>`;
+  const wire = () => {
+    m.querySelectorAll(".addex-item").forEach((it) => {
+      it.onclick = () => _confirmMerge(fromEx, it.dataset.id, m);
+    });
+  };
+  wire();
+  m.querySelector("#merge-close").onclick = () => m.classList.remove("open");
+  m.querySelector("#merge-search").oninput = (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    const filt = catalog.filter((x) => x.nome.toLowerCase().includes(q));
+    document.getElementById("merge-list").innerHTML = filt.length
+      ? filt
+          .map(
+            (x) => `<button class="addex-item" data-id="${escapeHtml(x.id)}">
+              <span class="addex-name">${escapeHtml(x.nome)}</span>
+              <span class="addex-meta">${escapeHtml(x.gruppo || "")}</span></button>`
+          )
+          .join("")
+      : '<div class="empty-state">Nessun esercizio</div>';
+    wire();
+  };
+  m.classList.add("open");
+}
+
+async function _confirmMerge(fromEx, toId, modal) {
+  const toEx = (_libState.catalog || EXERCISES_CATALOG || []).find((x) => x.id === toId);
+  const toName = toEx ? toEx.nome : toId;
+  const fromId = String(fromEx.ref).replace(/^ex:/, "").replace(/^custom:/, "");
+  const ok = await liftConfirm(
+    `Tutte le serie, i PR e le schede di "${fromEx.name}" verranno spostati su "${toName}", e "${fromEx.name}" sparirà. Confermi?`,
+    { title: "Unisci esercizi", okLabel: "Unisci", danger: true }
+  );
+  if (!ok) return;
+  try {
+    const res = await apiPost("lift_merge_exercise", { fromId: fromId, toId: toId });
+    if (res && res.status === "OK") {
+      modal.classList.remove("open");
+      await liftAlert(
+        `Fatto: spostati ${res.setsMoved || 0} serie, ${res.prsMoved || 0} PR, ${res.blocksMoved || 0} esercizi in scheda.`,
+        "Uniti"
+      );
+      openLibrary(); // ricarico il catalogo aggiornato
+    } else {
+      liftAlert("Errore: " + (res && res.message ? res.message : "merge non riuscito"));
+    }
+  } catch (e) {
+    liftAlert("Errore: " + (e.message || e));
+  }
 }
 
 function _findExerciseByRef(ref) {

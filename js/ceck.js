@@ -20,7 +20,7 @@ async function openCeck() {
   root.innerHTML = `
     <div class="history-head">
       <button class="icon-btn" id="ceck-back" aria-label="Indietro">${iconSvg("arrow-left")}</button>
-      <div class="history-title">CECK</div>
+      <div class="history-title">Ceck</div>
     </div>
     <div class="ceck-tabs">
       <button class="ceck-tab active" data-tab="esercizi">Esercizi</button>
@@ -41,12 +41,12 @@ async function openCeck() {
     data = await apiGet("lift_get_ceck", {});
   } catch (e) {
     document.getElementById("ceck-view-esercizi").innerHTML =
-      `<div class="empty-state">Errore nel caricamento del CECK.</div>`;
+      `<div class="empty-state">Errore nel caricamento del Ceck.</div>`;
     return;
   }
   _ceckData = data;
   if (!data || data.status !== "OK" || !data.hasProgram) {
-    const msg = `<div class="empty-state">Serve un programma attivo per il CECK.</div>`;
+    const msg = `<div class="empty-state">Serve un programma attivo per il Ceck.</div>`;
     document.getElementById("ceck-view-esercizi").innerHTML = msg;
     document.getElementById("ceck-view-ceck").innerHTML = msg;
     return;
@@ -84,12 +84,17 @@ function _renderCeckEsercizi() {
       const rows = (w.blocchi || [])
         .map((b) => {
           const serie = (b.serie || [])
-            .map((s) => `${s.reps}x${_ceckKg(s.peso)}`)
+            .map((s) => {
+              // "6x32,5 kg" se c'è il peso, "6x—" se settimana non allenata
+              return s.peso != null
+                ? `${s.reps}x${_ceckKg(s.peso)} kg`
+                : `${s.reps}x—`;
+            })
             .join(" · ");
           return `
             <div class="ceck-ex-row">
-              <span class="ceck-ex-name">${escapeHtml(b.exerciseName)}</span>
-              <span class="ceck-ex-sets">${serie || "—"}</span>
+              <div class="ceck-ex-name">${escapeHtml(b.exerciseName)}</div>
+              <div class="ceck-ex-sets">${serie || "—"}</div>
             </div>`;
         })
         .join("");
@@ -180,16 +185,16 @@ function _renderCeckCeck() {
     <div class="ceck-sec-head ceck-sec-prog">Fine programma</div>
     ${parz}
 
-    <div class="ceck-sub-head">Allenamenti saltati${(f.saltati || []).length ? " (" + f.saltati.length + ")" : ""}</div>
+    <div class="ceck-sub-head ceck-head-red">Allenamenti saltati${(f.saltati || []).length ? " (" + f.saltati.length + ")" : ""}</div>
     ${saltatiHtml}
 
-    <div class="ceck-sub-head">Top progressioni · carico</div>
+    <div class="ceck-sub-head ceck-head-green">Top progressioni</div>
+    <div class="ceck-mini-lab">Carico</div>
     ${_ceckProgList(f.topCarico, "kg")}
-
-    <div class="ceck-sub-head">Top progressioni · ripetizioni</div>
+    <div class="ceck-mini-lab">Ripetizioni</div>
     ${_ceckProgList(f.topReps, "reps")}
 
-    <div class="ceck-sub-head">Non progrediti</div>
+    <div class="ceck-sub-head ceck-head-red">Non progrediti</div>
     ${_ceckProgList(f.nonProgrediti, null, true)}
   `;
 }

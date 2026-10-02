@@ -168,6 +168,13 @@ async function apiPost(action, payload = {}) {
     }
     // il peso corporeo entra nella media settimanale del CECK
     if (action === "lift_log_weight") apiInvalidate("lift_get_ceck");
+    // il merge rimappa i set di un esercizio → cambia storico/stats/ceck
+    if (action === "lift_merge_exercise") {
+      apiInvalidate("lift_get_history");
+      apiInvalidate("lift_get_ceck");
+      apiInvalidate("lift_get_pr_stats");
+      apiInvalidate("lift_get_month_report");
+    }
     return data;
   } finally {
     _hideLoading();
@@ -192,6 +199,7 @@ const _INVALIDATES_BOOTSTRAP = {
   lift_set_program_week: true,
   lift_replace_exercise: true,
   lift_save_exercise: true,
+  lift_merge_exercise: true,
 };
 
 function mockResponse(action) {
