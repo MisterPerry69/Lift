@@ -134,7 +134,9 @@ function liftAlert(message, title) {
 }
 
 function showScreen(id) {
-  Object.values(screens).forEach((el) => el.classList.remove("active"));
+  // robusto ai null: una schermata non ancora caricata (es. index.html vecchio
+  // in cache) non deve bloccare l'intera app.
+  Object.values(screens).forEach((el) => el && el.classList.remove("active"));
   if (screens[id]) screens[id].classList.add("active");
 }
 
