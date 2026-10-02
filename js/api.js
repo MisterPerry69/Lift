@@ -52,6 +52,7 @@ const LOADING_MSG = {
   lift_get_template: "Preparo la scheda…",
   lift_get_session: "Carico la sessione…",
   lift_get_history: "Carico lo storico…",
+  lift_get_ceck: "Preparo il CECK…",
   lift_save_template: "Salvo la scheda…",
   lift_save_session: "Salvo la sessione…",
   lift_log_weight: "Salvo il peso…",
@@ -102,21 +103,23 @@ async function _fetchTimeout(url, ms) {
 }
 
 /**
- * GET verso GAS con RETRY automatico. GAS su rete instabile (o durante un
- * redirect intermedio / throttling) risponde a volte con HTML invece di JSON,
- * o la fetch fallisce del tutto: un singolo colpo diventava "Connessione
- * fallita" fatale. Le GET sono idempotenti → sicuro riprovare con backoff.
- * Ogni tentativo ha un TIMEOUT (12s) così un backend appeso non blocca minuti.
+ * GET verso GAS con RETRY automatico. GAS su rete instabile risponde a volte con
+ * HTML invece di JSON, o la fetch fallisce/si appende. Le GET sono idempotenti →
+ * sicuro riprovare.
+ * TIMEOUT ALTO (30s): il bootstrap legge molte tab del foglio ed è LENTO ma
+ * funzionante (a freddo può superare i 10-15s). Un timeout basso (era 12s) lo
+ * abortiva → "signal is aborted without reason". 30s è solo il tetto anti-
+ * appeso-infinito, non taglia le risposte lente-ma-valide.
  */
 async function _getJsonWithRetry(url, tries = 3) {
   let lastErr;
   for (let i = 0; i < tries; i++) {
     try {
-      const res = await _fetchTimeout(url, 12000);
+      const res = await _fetchTimeout(url, 30000);
       return await _parse(res); // lancia su HTML/non-JSON
     } catch (e) {
       lastErr = e;
-      if (i < tries - 1) await _sleep(600 * (i + 1)); // 600ms, 1200ms
+      if (i < tries - 1) await _sleep(800 * (i + 1)); // 800ms, 1600ms
     }
   }
   throw lastErr;
@@ -161,7 +164,10 @@ async function apiPost(action, payload = {}) {
     if (_INVALIDATES_HISTORY[action]) {
       apiInvalidate("lift_get_history");
       apiInvalidate("lift_get_session");
+      apiInvalidate("lift_get_ceck");
     }
+    // il peso corporeo entra nella media settimanale del CECK
+    if (action === "lift_log_weight") apiInvalidate("lift_get_ceck");
     return data;
   } finally {
     _hideLoading();

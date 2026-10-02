@@ -25,6 +25,7 @@ function _profileHtml(p) {
     : "nessuna sessione ancora";
   const weightTxt = p.weightKg ? p.weightKg + " kg" : "—";
   const items = [
+    { id: "ceck", icon: "check", label: "CECK", green: true },
     { id: "schede", icon: "clipboard", label: "Schede allenamenti" },
     { id: "esercizi", icon: "library", label: "Esercizi" },
     { id: "peso", icon: "scale", label: "Aggiorna peso" },
@@ -47,7 +48,7 @@ function _profileHtml(p) {
       ${items
         .map(
           (it) => `
-        <button class="prof-item" data-pi="${it.id}">
+        <button class="prof-item${it.green ? " prof-item-green" : ""}" data-pi="${it.id}">
           <span class="pi-icon">${iconSvg(it.icon)}</span>
           <span class="pi-text">${it.label}</span>
           ${it.soon ? '<span class="pi-soon">soon</span>' : ""}
@@ -67,6 +68,8 @@ function _wireProfile() {
 
 async function _handleProfileItem(id) {
   switch (id) {
+    case "ceck":
+      return openCeck();
     case "home":
       showScreen("home");
       return renderHome();

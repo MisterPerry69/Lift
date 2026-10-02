@@ -1,0 +1,214 @@
+/* ============================================
+   LIFT — CECK
+   ============================================ */
+
+/* Tab switcher (come stats) */
+.ceck-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  margin-bottom: var(--sp-5);
+}
+.ceck-tab {
+  padding: 8px var(--sp-2);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  color: var(--text-dim-2);
+  border-radius: var(--radius-pill);
+  text-align: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.ceck-tab.active {
+  background: #3fae5a;
+  color: #fff;
+}
+
+.ceck-view { display: none; }
+.ceck-view.active { display: block; }
+
+/* Barra settimana (dropdown) */
+.ceck-week-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.ceck-week-prog {
+  color: var(--text-dim-2);
+  font-size: var(--fs-small);
+  font-style: italic;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* il select riusa .sch-week-select (schede.css); qui solo l'accento verde al focus */
+.ceck-week-select:focus { border-color: #3fae5a; }
+
+/* ---------- TAB ESERCIZI ---------- */
+.ceck-wo {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.ceck-wo-name {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-small);
+  color: #3fae5a;
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+.ceck-ex-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-top: 1px solid var(--border-soft);
+}
+.ceck-ex-row:first-of-type { border-top: none; }
+.ceck-ex-name {
+  font-size: var(--fs-small);
+  color: var(--text);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.ceck-ex-sets {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* ---------- TAB CECK ---------- */
+.ceck-sec-head {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: var(--sp-5) 0 var(--sp-3);
+  letter-spacing: 0.01em;
+}
+.ceck-sec-week { color: var(--text); }
+.ceck-sec-prog {
+  color: #3fae5a;
+  border-top: 2px solid rgba(63, 174, 90, 0.3);
+  padding-top: var(--sp-4);
+  margin-top: var(--sp-6);
+}
+.ceck-parziale {
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: -6px 0 var(--sp-3);
+}
+.ceck-sub-head {
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: var(--fs-micro);
+  color: var(--text-dim-2);
+  font-weight: 700;
+  margin: var(--sp-4) 0 var(--sp-2);
+}
+
+/* card media peso/energia */
+.ceck-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+.ceck-card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+  text-align: center;
+}
+.ceck-card-v {
+  font-size: 1.3rem;
+  font-weight: 800;
+  font-family: var(--font);
+  letter-spacing: -0.02em;
+}
+.ceck-card-l {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim-2);
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+/* note personali */
+.ceck-note {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: 4px;
+}
+.ceck-note-ex {
+  display: block;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--text);
+}
+.ceck-note-txt {
+  display: block;
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* liste (saltati, progressioni) */
+.ceck-list {
+  margin: 0;
+  padding-left: var(--sp-5);
+  color: var(--text-dim);
+  font-size: var(--fs-small);
+  line-height: 1.7;
+}
+.ceck-empty-row {
+  font-size: var(--fs-small);
+  color: var(--text-dim-2);
+  font-style: italic;
+  padding: var(--sp-2) 0;
+}
+.ceck-prog-list {
+  display: flex;
+  flex-direction: column;
+}
+.ceck-prog-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+  border-top: 1px solid var(--border-soft);
+  font-size: var(--fs-small);
+}
+.ceck-prog-row:first-child { border-top: none; }
+.ceck-prog-ex { color: var(--text); font-weight: 600; }
+.ceck-prog-val {
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.ceck-prog-up { color: #3fae5a; }
+.ceck-prog-down { color: var(--danger); }
+.ceck-prog-flat { color: var(--text-dim-2); }
