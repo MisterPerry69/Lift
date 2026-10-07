@@ -120,7 +120,8 @@ function _renderCeckEsercizi() {
 
 async function _ceckChangeWeek(week) {
   _ceckViewWeek = week;
-  // ricarico solo i dati della tab esercizi per quella settimana
+  // ricarico i dati della settimana scelta: aggiorna sia Esercizi sia il
+  // blocco settimanale della tab Ceck (media peso/energia su quella settimana).
   let data;
   try {
     data = await apiGet("lift_get_ceck", { viewWeek: week });
@@ -129,7 +130,9 @@ async function _ceckChangeWeek(week) {
   }
   if (data && data.status === "OK" && data.hasProgram) {
     _ceckData.esercizi = data.esercizi;
+    _ceckData.settimanale = data.settimanale;
     _renderCeckEsercizi();
+    _renderCeckCeck();
   }
 }
 
